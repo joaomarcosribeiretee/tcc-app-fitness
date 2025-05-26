@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="Gestão de Conta e Autenticação" version="4">
+  <OBJECT>
+    <ID name="Gestão de Conta e Autenticação" mc="Standard.Package" uid="6edf0a2a-9d4e-4cae-a70f-f40b19a0b3a6"/>
+    <PID name="TCC_Fitness_Modelo" mc="Standard.Project" uid="101637f6-0351-4961-8b44-187e38701092"/>
+    <ATTRIBUTES>
+      <ATT name="IsInstantiable">false</ATT>
+      <ATT name="IsAbstract">false</ATT>
+      <ATT name="IsLeaf">false</ATT>
+      <ATT name="IsRoot">false</ATT>
+      <ATT name="Visibility">Public</ATT>
+      <ATT name="Name"><![CDATA[Gestão de Conta e Autenticação]]></ATT>
+      <ATT name="status">1970354901745664</ATT>
+    </ATTRIBUTES>
+    <DEPENDENCIES>
+      <COMP relation="OwnedElement">
+        <COMPID name="Editar Perfil" mc="Standard.UseCase" uid="8e3aebfe-c829-4a3e-b241-e114fd1f50f2"/>
+        <COMPID name="Cadastrar Conta" mc="Standard.UseCase" uid="7cbca802-2c3f-44c3-b023-fd021e5bb717"/>
+        <COMPID name="Fazer Login" mc="Standard.UseCase" uid="a34f551b-f290-4619-b24d-b98616b82108"/>
+        <COMPID name="Sair da Conta" mc="Standard.UseCase" uid="fc7d5e0a-203e-4cb0-9b19-a9e529dca662"/>
+        <COMPID name="Usuario" mc="Standard.Actor" uid="f6ed3c1b-16ba-40c9-be51-2ca3712d885f"/>
+      </COMP>
+      <COMP relation="Product">
+        <COMPID name="Casos de Uso - Gestão de Conta" mc="Standard.UseCaseDiagram" uid="612e71cc-0c6b-41bf-a923-539354c24a6c"/>
+      </COMP>
+    </DEPENDENCIES>
+  </OBJECT>
+</EXT>

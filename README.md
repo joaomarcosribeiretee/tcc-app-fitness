@@ -1,28 +1,25 @@
+# 📱 TCC App Fitness
 
----
+![Badge em Desenvolvimento](http://img.shields.io/static/v1?label=STATUS&message=EM%20DESENVOLVIMENTO&color=GREEN&style=for-the-badge)
 
-## 🔧 Dicas para Personalizar o README
+## 📝 Descrição do Projeto
 
-- **Imagens**: Adicione imagens dos seus diagramas para ilustrar melhor o projeto. Você pode fazer isso utilizando a sintaxe `![Descrição](caminho/para/imagem.png)`.:contentReference[oaicite:10]{index=10}
+O **TCC App Fitness** é um projeto desenvolvido como Trabalho de Conclusão de Curso, focado na criação de um aplicativo de fitness que auxilia usuários na montagem de programas de treino, acompanhamento de rotinas e integração com inteligência artificial para sugestões personalizadas.
 
-- **Badges**: :contentReference[oaicite:12]{index=12}:contentReference[oaicite:14]{index=14}
+## 📂 Estrutura do Repositório
 
-- **Links**: :contentReference[oaicite:16]{index=16}:contentReference[oaicite:18]{index=18}
+- `diagramas-modelio/`: Contém os diagramas UML desenvolvidos no Modelio.
+- `documentacao/`: Documentação do projeto, incluindo relatórios e apresentações.
+- `codigo-fonte/`: Código-fonte do aplicativo (em desenvolvimento).
 
-- **Organização**: :contentReference[oaicite:20]{index=20}:contentReference[oaicite:22]{index=22}
+## 🔧 Tecnologias Utilizadas
 
----
+- Modelio (para modelagem UML)
+- Git e GitHub (para controle de versão)
+- [Outras tecnologias que você está utilizando, como React Native, Node.js, etc.]
 
-## 📚 Recursos Adicionais
+## 🚀 Como Executar o Projeto
 
-Para mais dicas sobre como escrever um bom README, você pode consultar os seguintes recursos:
-
-- [Como escrever um README incrível no seu Github - Alura](https://www.alura.com.br/artigos/escrever-bom-readme)
-- [Como escrever um bom arquivo README para seu projeto do GitHub - FreeCodeCamp](https://www.freecodecamp.org/portuguese/news/como-escrever-um-bom-arquivo-readme-para-seu-projeto-do-github/)
-- [iuricode/readme-template - GitHub](https://github.com/iuricode/readme-template)
-
----
-
-Se precisar de ajuda para adaptar esse modelo ao seu projeto específico ou tiver dúvidas sobre como adicionar imagens e links, estou à disposição para auxiliar!
-::contentReference[oaicite:23]{index=23}
- 
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/joaomarcosribeiretee/tcc-app-fitness.git

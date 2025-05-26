@@ -16,10 +16,11 @@ O **TCC App Fitness** é um projeto desenvolvido como Trabalho de Conclusão de 
 
 - Modelio (para modelagem UML)
 - Git e GitHub (para controle de versão)
-- [Outras tecnologias que você está utilizando, como React Native, Node.js, etc.]
+- [Adicionar outras tecnologias aqui futuramente]
 
 ## 🚀 Como Executar o Projeto
 
 1. Clone o repositório:
    ```bash
    git clone https://github.com/joaomarcosribeiretee/tcc-app-fitness.git
+...

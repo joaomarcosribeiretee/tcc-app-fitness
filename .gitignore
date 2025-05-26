@@ -24,3 +24,7 @@ build/
 .vscode/
 .DS_Store
 Thumbs.db
+
+.runtime/
+*.log
+*.lock

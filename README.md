@@ -101,14 +101,3 @@ O desenvolvimento deste projeto segue uma metodologia baseada no processo **ICON
 ```bash
 # Clone o repositório
 git clone https://github.com/joaomarcosribeiretee/tcc-app-fitness.git
-
-# Acesse o diretório
-cd tcc-app-fitness
-
-# Instale as dependências
-npm install
-
-# Execute o app
-npx react-native run-android
-# ou
-npx react-native run-ios

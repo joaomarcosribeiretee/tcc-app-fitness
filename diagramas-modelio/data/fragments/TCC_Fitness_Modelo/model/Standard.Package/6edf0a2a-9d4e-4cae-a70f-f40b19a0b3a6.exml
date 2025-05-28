@@ -24,12 +24,28 @@
         <COMPID name="Gerenciar Programas de Treino" mc="Standard.UseCase" uid="5b76f1b1-7137-4a03-81cd-b31396d9c70a"/>
         <COMPID name="Gerenciar Programas de Dieta" mc="Standard.UseCase" uid="7eb2d609-ede9-4a17-ba83-af76b65d8815"/>
         <COMPID name="Acompanhar Perfil e Histórico" mc="Standard.UseCase" uid="1d70227d-5fd5-494f-9745-96228c932476"/>
-        <COMPID name="Montar Programa de Treino" mc="Standard.UseCase" uid="b744445b-8469-40c8-a0cb-342870ac927f"/>
+        <COMPID name="Criar Programa de Treino" mc="Standard.UseCase" uid="b744445b-8469-40c8-a0cb-342870ac927f"/>
         <COMPID name="Editar Programa de Treino" mc="Standard.UseCase" uid="eda0c7a2-31ff-4b06-8afb-d377b0ac784b"/>
         <COMPID name="Excluir Programa de Treino" mc="Standard.UseCase" uid="332c9b54-34ee-4f5a-bf0c-5800dc50348d"/>
         <COMPID name="Iniciar Rotina de Treino" mc="Standard.UseCase" uid="106615f5-6554-4181-b60a-1551712f2697"/>
-        <COMPID name="Treino Rápido" mc="Standard.UseCase" uid="11aba978-46d1-440e-8a38-c14f852a18b5"/>
-        <COMPID name="Treino Inteligente (IA)" mc="Standard.UseCase" uid="8086431b-8d13-42d7-aba4-3b81d7771335"/>
+        <COMPID name="Executar Treino Rápido" mc="Standard.UseCase" uid="11aba978-46d1-440e-8a38-c14f852a18b5"/>
+        <COMPID name="Solicitar Treino Inteligente (IA)" mc="Standard.UseCase" uid="8086431b-8d13-42d7-aba4-3b81d7771335"/>
+        <COMPID name="Criar Dieta Manual" mc="Standard.UseCase" uid="518bbcc6-00ef-4935-b14c-b63e7b946bcc"/>
+        <COMPID name="Visualizar Macronutrientes da Refeição" mc="Standard.UseCase" uid="83b7717d-d396-412d-8206-25e91068af08"/>
+        <COMPID name="Visualizar Total Diário" mc="Standard.UseCase" uid="25b4d845-7b30-4f09-9659-73825111e093"/>
+        <COMPID name="Solicitar Dieta Inteligente (IA)" mc="Standard.UseCase" uid="29a8d803-8cbf-40b0-8011-03fb1a6a913f"/>
+        <COMPID name="Aceitar Dieta Inteligente" mc="Standard.UseCase" uid="7ca2bfbf-02f3-444a-845f-c2a6c780f000"/>
+        <COMPID name="Solicitar Alteração da Dieta IA" mc="Standard.UseCase" uid="7221b97a-aab1-4e74-a39a-f567a5bdacb1"/>
+        <COMPID name="Gerar Dieta Inteligente" mc="Standard.UseCase" uid="03241a49-14bb-4a98-9bc3-90037418eef3"/>
+        <COMPID name="Gerenciar Rotinas de Treino no Programa de Treino" mc="Standard.UseCase" uid="1eb83da6-8475-4936-850a-f4e864508792"/>
+        <COMPID name="Gerenciar Exercícios da Rotina" mc="Standard.UseCase" uid="73d379ad-707f-4f9a-b51a-8964a408c737"/>
+        <COMPID name="Solicitar Alteração do Programa de Treino Inteligente" mc="Standard.UseCase" uid="89fca17d-8a85-46a2-b346-9945e30f2c1f"/>
+        <COMPID name="Aceitar Programa de Treino Inteligente" mc="Standard.UseCase" uid="97b9e2b6-6ac9-4e42-a495-5c29aaee5467"/>
+        <COMPID name="Gerar Treino Inteligente (IA)" mc="Standard.UseCase" uid="fbbb7ac0-4457-4b53-b625-f7f18bfe8b7f"/>
+        <COMPID name="Editar Perfil" mc="Standard.UseCase" uid="360747ab-613a-4cdd-b5b2-8da0e756c962"/>
+        <COMPID name="Visualizar Histórico de Rotinas" mc="Standard.UseCase" uid="2e4272fc-3d9c-41e4-8ad3-da3ce8e298ef"/>
+        <COMPID name="Acessar Detalhes de Rotina" mc="Standard.UseCase" uid="794de7f6-4adc-4864-80ae-92ae87e98efc"/>
+        <COMPID name="Visualizar Evolução em Gráficos" mc="Standard.UseCase" uid="c01bd88e-27b6-46e8-a327-630cba6c9142"/>
       </COMP>
       <COMP relation="Product">
         <COMPID name="Gestão de Conta e Autenticação" mc="Standard.UseCaseDiagram" uid="612e71cc-0c6b-41bf-a923-539354c24a6c"/>

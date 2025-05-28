@@ -137,7 +137,7 @@
           </DEPENDENCIES>
         </OBJECT>
         <OBJECT>
-          <ID name="" mc="Standard.AssociationEnd" uid="726b42a9-96fa-417f-9254-6afb7275330a"/>
+          <ID name="" mc="Standard.AssociationEnd" uid="47fa5f7c-fb74-48c6-9e07-bfb9425548aa"/>
           <ATTRIBUTES>
             <ATT name="Aggregation">KindIsAssociation</ATT>
             <ATT name="IsChangeable">true</ATT>
@@ -155,11 +155,11 @@
           </ATTRIBUTES>
           <DEPENDENCIES>
             <LINK relation="Target">
-              <ID name="Treino Inteligente (IA)" mc="Standard.UseCase" uid="8086431b-8d13-42d7-aba4-3b81d7771335"/>
+              <ID name="Gerar Dieta Inteligente" mc="Standard.UseCase" uid="03241a49-14bb-4a98-9bc3-90037418eef3"/>
             </LINK>
             <COMP relation="Opposite">
               <OBJECT>
-                <ID name="" mc="Standard.AssociationEnd" uid="f5c3d054-3087-4512-87e4-d9ecb7638357"/>
+                <ID name="" mc="Standard.AssociationEnd" uid="2d4f09c1-2559-4973-9a12-438bea5b5c72"/>
                 <ATTRIBUTES>
                   <ATT name="Aggregation">KindIsAssociation</ATT>
                   <ATT name="IsChangeable">true</ATT>
@@ -177,11 +177,11 @@
                 </ATTRIBUTES>
                 <DEPENDENCIES>
                   <COMP relation="Opposite">
-                    <COMPID name="" mc="Standard.AssociationEnd" uid="726b42a9-96fa-417f-9254-6afb7275330a"/>
+                    <COMPID name="" mc="Standard.AssociationEnd" uid="47fa5f7c-fb74-48c6-9e07-bfb9425548aa"/>
                   </COMP>
                   <COMP relation="Association">
                     <OBJECT>
-                      <ID name="" mc="Standard.Association" uid="1806181a-7549-4eae-949e-4b06bfbe8392"/>
+                      <ID name="" mc="Standard.Association" uid="3ad46177-be16-4724-97a2-a82916bcb9bd"/>
                       <ATTRIBUTES>
                         <ATT name="Name"></ATT>
                         <ATT name="status">1970354901745664</ATT>
@@ -193,7 +193,68 @@
               </OBJECT>
             </COMP>
             <COMP relation="Association">
-              <COMPID name="" mc="Standard.Association" uid="1806181a-7549-4eae-949e-4b06bfbe8392"/>
+              <COMPID name="" mc="Standard.Association" uid="3ad46177-be16-4724-97a2-a82916bcb9bd"/>
+            </COMP>
+          </DEPENDENCIES>
+        </OBJECT>
+        <OBJECT>
+          <ID name="" mc="Standard.AssociationEnd" uid="4b3300a4-5e28-47d8-bbfe-6965a9fde73d"/>
+          <ATTRIBUTES>
+            <ATT name="Aggregation">KindIsAssociation</ATT>
+            <ATT name="IsChangeable">true</ATT>
+            <ATT name="Changeable">AccesNone</ATT>
+            <ATT name="IsDerived">false</ATT>
+            <ATT name="IsOrdered">false</ATT>
+            <ATT name="IsUnique">false</ATT>
+            <ATT name="MultiplicityMin"><![CDATA[0]]></ATT>
+            <ATT name="MultiplicityMax"><![CDATA[1]]></ATT>
+            <ATT name="Visibility">Public</ATT>
+            <ATT name="IsClass">false</ATT>
+            <ATT name="IsAbstract">false</ATT>
+            <ATT name="Name"></ATT>
+            <ATT name="status">1970354901745664</ATT>
+          </ATTRIBUTES>
+          <DEPENDENCIES>
+            <LINK relation="Target">
+              <ID name="Gerar Treino Inteligente (IA)" mc="Standard.UseCase" uid="fbbb7ac0-4457-4b53-b625-f7f18bfe8b7f"/>
+            </LINK>
+            <COMP relation="Opposite">
+              <OBJECT>
+                <ID name="" mc="Standard.AssociationEnd" uid="52693f99-393d-4ee3-8da9-fb6b51c71607"/>
+                <ATTRIBUTES>
+                  <ATT name="Aggregation">KindIsAssociation</ATT>
+                  <ATT name="IsChangeable">true</ATT>
+                  <ATT name="Changeable">AccesNone</ATT>
+                  <ATT name="IsDerived">false</ATT>
+                  <ATT name="IsOrdered">false</ATT>
+                  <ATT name="IsUnique">false</ATT>
+                  <ATT name="MultiplicityMin"><![CDATA[0]]></ATT>
+                  <ATT name="MultiplicityMax"><![CDATA[1]]></ATT>
+                  <ATT name="Visibility">Public</ATT>
+                  <ATT name="IsClass">false</ATT>
+                  <ATT name="IsAbstract">false</ATT>
+                  <ATT name="Name"></ATT>
+                  <ATT name="status">1970354901745664</ATT>
+                </ATTRIBUTES>
+                <DEPENDENCIES>
+                  <COMP relation="Opposite">
+                    <COMPID name="" mc="Standard.AssociationEnd" uid="4b3300a4-5e28-47d8-bbfe-6965a9fde73d"/>
+                  </COMP>
+                  <COMP relation="Association">
+                    <OBJECT>
+                      <ID name="" mc="Standard.Association" uid="c52b80a3-d8cd-44e2-95d0-075934b2260e"/>
+                      <ATTRIBUTES>
+                        <ATT name="Name"></ATT>
+                        <ATT name="status">1970354901745664</ATT>
+                      </ATTRIBUTES>
+                      <DEPENDENCIES></DEPENDENCIES>
+                    </OBJECT>
+                  </COMP>
+                </DEPENDENCIES>
+              </OBJECT>
+            </COMP>
+            <COMP relation="Association">
+              <COMPID name="" mc="Standard.Association" uid="c52b80a3-d8cd-44e2-95d0-075934b2260e"/>
             </COMP>
           </DEPENDENCIES>
         </OBJECT>

@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="Gestão de Dietas" version="4">
+  <OBJECT>
+    <ID name="Gestão de Dietas" mc="Standard.UseCaseDiagram" uid="144431e7-2888-45bb-8e8d-81bffe7f8c19"/>
+    <PID name="Casos de Uso" mc="Standard.Package" uid="6edf0a2a-9d4e-4cae-a70f-f40b19a0b3a6"/>
+    <ATTRIBUTES>
+      <ATT name="UiDataVersion">3</ATT>
+      <ATT name="UiData"><![CDATA[eJztWO1S4jAUfZVOZ/9SrOKKO6gDLYsdK3WKuuP+YQK9YDVNnCSIfZ59lH2xTfkaqYgRK8JOf7WTj3PvTc69OUnl5CnC2iMwHlJypJvGjq6dHFe8zh10hRYGsknXRPwARzplfSOiAeCQGoMIGwMOXcQhCFGfociQP4IyAzBEQARPdzeiKw6WbLDHDboWoTvK2jPTO/px5YLRB2Ai1giKpEWMYjoQNhJI9l0jPICJK2SAsV48rhSnE15MbYkYgz4XyO6iQKbu8WQ8N7qUgTGeq+CfDKeLAgimxupPwoeeopWmhJjM1OBJ2B1H+jj6TX4s2kFYLI+x2mp5Vrt16v2yqr6dWqIapRgQ0bXHpPFI7yHMQRXP99x6K0vAZvXaaVRrjutc3mSFa3nNZt26dLym711d1v0Ubp0Moh9KW30G8TeLEiKJInfal5QD5gQzh2zHl2ZUI3Wrtbq7QojFMVOXGWGAkYBAUiyFf540TcFbApEAscCYzzfNLJVKeyYcFHbL5XKhtN/pFMpQDgpls9PrwUGv3DUPlweJERdnhA6JizqAUz60BAtJXz9uABd//1AtAM0OQSBeKY6GLQ1MLo9DLBo9UB4me/AKtgKUdRvigEGC4IZczBWAvRUrGY+5gKSCtUY/669cpU+vXEnZGtfI/5OV0iTlCSevON0cQu4v29cZ/bo0iigxbkFuGJMstKGHBlicJ+Pr40Gno771E/O7KjEl1FP8YXaWcna+h51jxigA8ls6bIfdF0ArHM0jqHuIh5QFGaAJ1L1vy6LLgL6BJthAxTW8YBsUoGZMe0b+g2yOk58M4DclSomRbfaW8+zd4Ozt0CBe5XwpTj6LFvpFVwpsykljsr8p1xwioJ+cM5OFNxWy5HBbRZe5k6uuzcyMD6ouc+GLxjbJLlP5KSObyi1TISdoLrw2RXiZGV3kv055mco3+jyBc+21svYyFz4wbIX4Un5ZyMXXdomvhbfmrRJfa742y1TICZqLr40RXxld6L9OfO0qX+zzBM7F1/vE15uG3JDc8yUup4bX+jZDQ7ksLoql/Xkeq71jBGMAbuAEIjlLnyOuJ/veN+uryR+ma/iUmXbDcKs3db9dq1pnDd+7atpZE/VVlOe7xhcpq92lj0I5HT6RDpfexfoL1nycioXrtcvOP+Q2Tcs=]]></ATT>
+      <ATT name="PreviewData"><![CDATA[data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAVCAIAAAAmdTLBAAAAGElEQVR4nGP4TxlgGNU/qn9U/6j+EaofAB8cJiE1IQRUAAAAAElFTkSuQmCC]]></ATT>
+      <ATT name="JsStructure"></ATT>
+      <ATT name="Name"><![CDATA[Gestão de Dietas]]></ATT>
+      <ATT name="status">1970354901745664</ATT>
+    </ATTRIBUTES>
+    <DEPENDENCIES>
+      <LINK relation="Represented">
+        <ID name="Casos de Uso" mc="Standard.Package" uid="6edf0a2a-9d4e-4cae-a70f-f40b19a0b3a6"/>
+      </LINK>
+      <COMP relation="Descriptor">
+        <OBJECT>
+          <ID name="" mc="Infrastructure.Note" uid="34341493-c45e-462b-970b-5237b2d10d9c"/>
+          <ATTRIBUTES>
+            <ATT name="Content"></ATT>
+            <ATT name="MimeType"><![CDATA[text/plain]]></ATT>
+            <ATT name="Name"></ATT>
+            <ATT name="status">1970354901745664</ATT>
+          </ATTRIBUTES>
+          <DEPENDENCIES>
+            <LINK relation="Model">
+              <FOREIGNID name="description" mc="Infrastructure.NoteType" uid="00000000-0000-3e81-0000-000000000000"/>
+            </LINK>
+          </DEPENDENCIES>
+        </OBJECT>
+      </COMP>
+    </DEPENDENCIES>
+  </OBJECT>
+</EXT>

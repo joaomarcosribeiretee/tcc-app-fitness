@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
-<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="Gestão de Conta e Autenticação" version="4">
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="Casos de Uso" version="4">
   <OBJECT>
-    <ID name="Gestão de Conta e Autenticação" mc="Standard.Package" uid="6edf0a2a-9d4e-4cae-a70f-f40b19a0b3a6"/>
+    <ID name="Casos de Uso" mc="Standard.Package" uid="6edf0a2a-9d4e-4cae-a70f-f40b19a0b3a6"/>
     <PID name="TCC_Fitness_Modelo" mc="Standard.Project" uid="101637f6-0351-4961-8b44-187e38701092"/>
     <ATTRIBUTES>
       <ATT name="IsInstantiable">false</ATT>
@@ -9,7 +9,7 @@
       <ATT name="IsLeaf">false</ATT>
       <ATT name="IsRoot">false</ATT>
       <ATT name="Visibility">Public</ATT>
-      <ATT name="Name"><![CDATA[Gestão de Conta e Autenticação]]></ATT>
+      <ATT name="Name"><![CDATA[Casos de Uso]]></ATT>
       <ATT name="status">1970354901745664</ATT>
     </ATTRIBUTES>
     <DEPENDENCIES>
@@ -18,10 +18,25 @@
         <COMPID name="Cadastrar Conta" mc="Standard.UseCase" uid="7cbca802-2c3f-44c3-b023-fd021e5bb717"/>
         <COMPID name="Fazer Login" mc="Standard.UseCase" uid="a34f551b-f290-4619-b24d-b98616b82108"/>
         <COMPID name="Sair da Conta" mc="Standard.UseCase" uid="fc7d5e0a-203e-4cb0-9b19-a9e529dca662"/>
-        <COMPID name="Usuario" mc="Standard.Actor" uid="f6ed3c1b-16ba-40c9-be51-2ca3712d885f"/>
+        <COMPID name="Usuário" mc="Standard.Actor" uid="f6ed3c1b-16ba-40c9-be51-2ca3712d885f"/>
+        <COMPID name="IA (OpenAI)" mc="Standard.Actor" uid="538a58f6-1082-4a8d-8b74-a4149dc09468"/>
+        <COMPID name="Gerenciar Conta" mc="Standard.UseCase" uid="5718eb56-971e-4b5d-a003-a3ca69029307"/>
+        <COMPID name="Gerenciar Programas de Treino" mc="Standard.UseCase" uid="5b76f1b1-7137-4a03-81cd-b31396d9c70a"/>
+        <COMPID name="Gerenciar Programas de Dieta" mc="Standard.UseCase" uid="7eb2d609-ede9-4a17-ba83-af76b65d8815"/>
+        <COMPID name="Acompanhar Perfil e Histórico" mc="Standard.UseCase" uid="1d70227d-5fd5-494f-9745-96228c932476"/>
+        <COMPID name="Montar Programa de Treino" mc="Standard.UseCase" uid="b744445b-8469-40c8-a0cb-342870ac927f"/>
+        <COMPID name="Editar Programa de Treino" mc="Standard.UseCase" uid="eda0c7a2-31ff-4b06-8afb-d377b0ac784b"/>
+        <COMPID name="Excluir Programa de Treino" mc="Standard.UseCase" uid="332c9b54-34ee-4f5a-bf0c-5800dc50348d"/>
+        <COMPID name="Iniciar Rotina de Treino" mc="Standard.UseCase" uid="106615f5-6554-4181-b60a-1551712f2697"/>
+        <COMPID name="Treino Rápido" mc="Standard.UseCase" uid="11aba978-46d1-440e-8a38-c14f852a18b5"/>
+        <COMPID name="Treino Inteligente (IA)" mc="Standard.UseCase" uid="8086431b-8d13-42d7-aba4-3b81d7771335"/>
       </COMP>
       <COMP relation="Product">
-        <COMPID name="Casos de Uso - Gestão de Conta" mc="Standard.UseCaseDiagram" uid="612e71cc-0c6b-41bf-a923-539354c24a6c"/>
+        <COMPID name="Gestão de Conta e Autenticação" mc="Standard.UseCaseDiagram" uid="612e71cc-0c6b-41bf-a923-539354c24a6c"/>
+        <COMPID name="Gestão de Treinos" mc="Standard.UseCaseDiagram" uid="0aabb514-d7ca-4175-95ef-20c512f74949"/>
+        <COMPID name="Gestão de Dietas" mc="Standard.UseCaseDiagram" uid="144431e7-2888-45bb-8e8d-81bffe7f8c19"/>
+        <COMPID name="Perfil e Evolução" mc="Standard.UseCaseDiagram" uid="c3ac6dce-044e-4da1-8ea3-6f07e6259035"/>
+        <COMPID name="Visão Geral dos Casos de Uso" mc="Standard.UseCaseDiagram" uid="bae3ae55-cb75-4fd6-82a5-6fe16009c977"/>
       </COMP>
     </DEPENDENCIES>
   </OBJECT>

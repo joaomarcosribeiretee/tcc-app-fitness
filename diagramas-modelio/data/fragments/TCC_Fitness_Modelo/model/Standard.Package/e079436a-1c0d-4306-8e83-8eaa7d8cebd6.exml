@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="Casos de Uso" version="4">
+  <OBJECT>
+    <ID name="Casos de Uso" mc="Standard.Package" uid="e079436a-1c0d-4306-8e83-8eaa7d8cebd6"/>
+    <PID name="TCC_Fitness_Modelo" mc="Standard.Project" uid="101637f6-0351-4961-8b44-187e38701092"/>
+    <ATTRIBUTES>
+      <ATT name="IsInstantiable">false</ATT>
+      <ATT name="IsAbstract">false</ATT>
+      <ATT name="IsLeaf">false</ATT>
+      <ATT name="IsRoot">false</ATT>
+      <ATT name="Visibility">Public</ATT>
+      <ATT name="Name"><![CDATA[Casos de Uso]]></ATT>
+      <ATT name="status">1970354901745664</ATT>
+    </ATTRIBUTES>
+    <DEPENDENCIES>
+      <COMP relation="OwnedElement">
+        <COMPID name="Usuário" mc="Standard.Actor" uid="7f9ecbdb-6f78-4adb-9b05-df1804b0bd36"/>
+        <COMPID name="Cadastrar Usuário" mc="Standard.UseCase" uid="3ef25530-0144-4a14-bcc3-7592975ea630"/>
+        <COMPID name="Criar Programa de Treino Manual" mc="Standard.UseCase" uid="c4eaf7c2-efb6-4e88-b1a0-088f0a1d68c7"/>
+        <COMPID name="Executar Treino" mc="Standard.UseCase" uid="5bf645fc-8683-48c1-be20-f041e57b5649"/>
+        <COMPID name="Gerar Treino Inteligente com IA" mc="Standard.UseCase" uid="2302dd66-7124-4404-823a-f3b760b44463"/>
+        <COMPID name="Criar Dieta Manual" mc="Standard.UseCase" uid="843064e8-3b84-4109-8e76-91bb87cab0c4"/>
+        <COMPID name="Gerar Dieta Inteligente com IA" mc="Standard.UseCase" uid="9d50540a-aaa6-49cd-870b-731ff526471f"/>
+        <COMPID name="Acompanhar Evolução" mc="Standard.UseCase" uid="74389f66-bf0a-4b01-8759-089b403bfeae"/>
+      </COMP>
+      <COMP relation="Product">
+        <COMPID name="Diagrama de Casos de Uso" mc="Standard.UseCaseDiagram" uid="034c3aee-80d2-433b-b197-e412e5c3b984"/>
+      </COMP>
+    </DEPENDENCIES>
+  </OBJECT>
+</EXT>

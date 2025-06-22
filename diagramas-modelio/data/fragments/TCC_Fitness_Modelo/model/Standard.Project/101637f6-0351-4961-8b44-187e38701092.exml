@@ -11,7 +11,7 @@
     <DEPENDENCIES>
       <COMP relation="Model">
         <COMPID name="ModeloDeDominio" mc="Standard.Package" uid="e5c41e99-3af3-4801-8e8d-83dc76581ac6"/>
-        <COMPID name="Gestão de Conta e Autenticação" mc="Standard.Package" uid="6edf0a2a-9d4e-4cae-a70f-f40b19a0b3a6"/>
+        <COMPID name="Casos de Uso" mc="Standard.Package" uid="e079436a-1c0d-4306-8e83-8eaa7d8cebd6"/>
       </COMP>
       <COMP relation="DiagramRoot">
         <COMPID name="TCC_Fitness_Modelo" mc="Infrastructure.DiagramSet" uid="f2eb18a6-3163-46bb-85b2-409b75dec36e"/>

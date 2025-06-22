@@ -1,7 +1,3 @@
-#Wed May 28 17:00:59 BRT 2025
-org.modelio.app.diagram.editor.OpenedDiagrams0='Gest\u00E3o de Conta e Autentica\u00E7\u00E3o' {612e71cc-0c6b-41bf-a923-539354c24a6c} Standard.UseCaseDiagram
-org.modelio.app.diagram.editor.OpenedDiagrams3='Gest\u00E3o de Dietas' {144431e7-2888-45bb-8e8d-81bffe7f8c19} Standard.UseCaseDiagram
-org.modelio.app.diagram.editor.OpenedDiagrams4='Perfil e Evolu\u00E7\u00E3o' {c3ac6dce-044e-4da1-8ea3-6f07e6259035} Standard.UseCaseDiagram
-org.modelio.app.diagram.editor.OpenedDiagrams1='ModeloDeDominio' {4d032040-e1fa-4fb0-a0be-067f429c6689} Standard.ClassDiagram
-org.modelio.app.diagram.editor.OpenedDiagrams2='Gest\u00E3o de Treinos' {0aabb514-d7ca-4175-95ef-20c512f74949} Standard.UseCaseDiagram
-org.modelio.app.diagram.editor.OpenedDiagrams5='Vis\u00E3o Geral dos Casos de Uso' {bae3ae55-cb75-4fd6-82a5-6fe16009c977} Standard.UseCaseDiagram
+#Sun Jun 22 00:29:07 BRT 2025
+org.modelio.app.diagram.editor.OpenedDiagrams0='ModeloDeDominio' {4d032040-e1fa-4fb0-a0be-067f429c6689} Standard.ClassDiagram
+org.modelio.app.diagram.editor.OpenedDiagrams1='Diagrama de Casos de Uso' {034c3aee-80d2-433b-b197-e412e5c3b984} Standard.UseCaseDiagram

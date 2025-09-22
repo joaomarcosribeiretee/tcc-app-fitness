@@ -1,15 +1,17 @@
 export const colors = {
   // Background colors
-  background: '#000000',
+  background: '#10161E',
   surface: '#1a1a1a',
+  header: '#151F2B',
   
   // Text colors
   primary: '#ffffff',
   secondary: '#888888',
   
   // Accent colors
-  accent: '#4CAF50',
+  accent: '#787F84',
   accentDisabled: '#2a5a2a',
+  buttonText: '#151F2B',
   
   // Status colors
   error: '#ff4444',

@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { View, TextInput, Text, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, TextInput, Text, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Dimensions } from "react-native";
 import { AuthViewModel } from "./AuthViewModel";
 import { authStyles } from "./styles/authStyles";
 import { colors } from "./styles/colors";
+import { useHeaderHeight } from "@react-navigation/elements";
 
 export default function RegisterScreen({ navigation }: any) {
   const [nome, setNome] = useState("");
@@ -13,18 +14,18 @@ export default function RegisterScreen({ navigation }: any) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [vmState, setVmState] = useState({ loading: false } as any);
   const vm = useMemo(() => new AuthViewModel(setVmState), []);
+  const headerHeight = useHeaderHeight();
+  const windowHeight = Dimensions.get('window').height;
 
   useEffect(() => {
+    vm.bootstrap();
     if (vmState.token) navigation.replace("Home");
   }, [vmState.token]);
 
   return (
     <KeyboardAvoidingView style={authStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={authStyles.scrollContainer}>
-        {/* Header */}
-        <View style={authStyles.header}>
-          <Text style={authStyles.appTitle}>FITNESS</Text>
-        </View>
+      <ScrollView contentContainerStyle={[authStyles.scrollContainer, { minHeight: windowHeight - headerHeight }]}>
+        {/* Header removed per design; native header handles color */}
 
         {/* Main Content */}
         <View style={authStyles.content}>
@@ -63,15 +64,9 @@ export default function RegisterScreen({ navigation }: any) {
                 placeholderTextColor={colors.placeholder}
                 value={senha}
                 onChangeText={setSenha}
-                secureTextEntry={!showPassword}
+                secureTextEntry={true}
                 style={authStyles.input}
               />
-              <TouchableOpacity
-                style={authStyles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Text style={authStyles.eyeText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
-              </TouchableOpacity>
             </View>
 
             <View style={authStyles.passwordContainer}>
@@ -80,15 +75,9 @@ export default function RegisterScreen({ navigation }: any) {
                 placeholderTextColor={colors.placeholder}
                 value={confirmarSenha}
                 onChangeText={setConfirmarSenha}
-                secureTextEntry={!showConfirmPassword}
+                secureTextEntry={true}
                 style={authStyles.input}
               />
-              <TouchableOpacity
-                style={authStyles.eyeButton}
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                <Text style={authStyles.eyeText}>{showConfirmPassword ? '👁️' : '👁️‍🗨️'}</Text>
-              </TouchableOpacity>
             </View>
           </View>
 

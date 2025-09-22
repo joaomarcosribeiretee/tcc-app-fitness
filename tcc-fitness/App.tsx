@@ -19,8 +19,30 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{
+            title: 'WEIGHT',
+            headerStyle: { backgroundColor: '#151F2B' },
+            headerTintColor: '#FFFFFF',
+            headerTitleStyle: { fontWeight: '800', letterSpacing: 4, color: '#FFFFFF' },
+            headerTitleAlign: 'center',
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen
+          name="Register"
+          component={RegisterScreen}
+          options={{
+            title: 'WEIGHT',
+            headerStyle: { backgroundColor: '#151F2B' },
+            headerTintColor: '#FFFFFF',
+            headerTitleStyle: { fontWeight: '800', letterSpacing: 4, color: '#FFFFFF' },
+            headerTitleAlign: 'center',
+            headerShadowVisible: false,
+          }}
+        />
         <Stack.Screen name="Home" component={Home} />
       </Stack.Navigator>
     </NavigationContainer>

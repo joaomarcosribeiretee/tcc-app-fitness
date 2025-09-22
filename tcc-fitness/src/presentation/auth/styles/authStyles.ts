@@ -8,15 +8,16 @@ export const authStyles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
+    justifyContent: 'center',
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingTop: 0,
+    paddingBottom: 0,
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
   },
   appTitle: {
-    fontSize: 32,
+    fontSize: 0,
     fontWeight: 'bold',
     color: colors.primary,
     letterSpacing: 2,
@@ -24,7 +25,9 @@ export const authStyles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingBottom: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   welcomeTitle: {
     fontSize: 28,
@@ -52,6 +55,7 @@ export const authStyles = StyleSheet.create({
   },
   inputContainer: {
     marginBottom: 30,
+    width: '100%',
   },
   input: {
     backgroundColor: colors.surface,
@@ -59,12 +63,15 @@ export const authStyles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 12,
     padding: 16,
+    paddingRight: 48,
     fontSize: 16,
     color: colors.primary,
     marginBottom: 16,
+    width: '100%',
   },
   passwordContainer: {
     position: 'relative',
+    width: '100%',
   },
   eyeButton: {
     position: 'absolute',
@@ -73,7 +80,8 @@ export const authStyles = StyleSheet.create({
     padding: 4,
   },
   eyeText: {
-    fontSize: 20,
+    fontSize: 14,
+    color: colors.secondary,
   },
   loginButton: {
     backgroundColor: colors.accent,
@@ -81,12 +89,13 @@ export const authStyles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginBottom: 24,
+    alignSelf: 'stretch',
   },
   loginButtonDisabled: {
     backgroundColor: colors.accentDisabled,
   },
   loginButtonText: {
-    color: colors.primary,
+    color: colors.buttonText,
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -96,12 +105,13 @@ export const authStyles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginBottom: 24,
+    alignSelf: 'stretch',
   },
   registerButtonDisabled: {
     backgroundColor: colors.accentDisabled,
   },
   registerButtonText: {
-    color: colors.primary,
+    color: colors.buttonText,
     fontSize: 18,
     fontWeight: 'bold',
   },

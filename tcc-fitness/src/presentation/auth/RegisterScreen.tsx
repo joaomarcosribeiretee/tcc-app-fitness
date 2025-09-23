@@ -1,9 +1,8 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { View, TextInput, Text, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Dimensions } from "react-native";
+import React, { useMemo, useState } from "react";
+import { View, TextInput, Text, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { AuthViewModel } from "./AuthViewModel";
 import { authStyles } from "./styles/authStyles";
 import { colors } from "./styles/colors";
-import { useHeaderHeight } from "@react-navigation/elements";
 
 export default function RegisterScreen({ navigation }: any) {
   const [nome, setNome] = useState("");
@@ -14,28 +13,15 @@ export default function RegisterScreen({ navigation }: any) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [vmState, setVmState] = useState({ loading: false } as any);
   const vm = useMemo(() => new AuthViewModel(setVmState), []);
-  const headerHeight = useHeaderHeight();
-  const windowHeight = Dimensions.get('window').height;
-
-  useEffect(() => {
-    vm.bootstrap();
-    if (vmState.token) navigation.replace("Home");
-  }, [vmState.token]);
 
   return (
-    <KeyboardAvoidingView style={authStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={[authStyles.scrollContainer, { minHeight: windowHeight - headerHeight }]}>
-        {/* Header removed per design; native header handles color */}
-
-        {/* Main Content */}
+    <KeyboardAvoidingView style={authStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={authStyles.content}>
           <Text style={authStyles.welcomeTitle}>Criar Conta</Text>
           <Text style={authStyles.welcomeSubtitle}>Preencha os dados para se cadastrar</Text>
 
           {vmState.error && (
-            <View style={authStyles.errorContainer}>
-              <Text style={authStyles.errorText}>{vmState.error}</Text>
-            </View>
+            <Text style={authStyles.feedbackText}>{vmState.error}</Text>
           )}
 
           <View style={authStyles.inputContainer}>
@@ -83,7 +69,10 @@ export default function RegisterScreen({ navigation }: any) {
 
           <TouchableOpacity
             style={[authStyles.registerButton, vmState.loading && authStyles.registerButtonDisabled]}
-            onPress={() => vm.register(nome, email, senha)}
+            onPress={async () => {
+              const ok = await vm.register(nome, email, senha);
+              if (ok) navigation.navigate("Home");
+            }}
             disabled={vmState.loading}
           >
             {vmState.loading ? (
@@ -100,7 +89,6 @@ export default function RegisterScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

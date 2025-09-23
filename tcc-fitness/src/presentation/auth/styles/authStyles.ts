@@ -42,16 +42,12 @@ export const authStyles = StyleSheet.create({
     marginBottom: 40,
     textAlign: 'center',
   },
-  errorContainer: {
-    backgroundColor: colors.error,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  errorText: {
-    color: colors.primary,
+  feedbackText: {
+    color: colors.error,
     fontSize: 14,
     textAlign: 'center',
+    marginBottom: 12,
+    opacity: 0.9,
   },
   inputContainer: {
     marginBottom: 30,

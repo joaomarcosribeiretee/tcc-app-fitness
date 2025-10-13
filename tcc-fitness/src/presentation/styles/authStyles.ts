@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { colors } from '../../styles/colors';
+import { colors } from './colors';
+import { fonts } from './fonts';
 
 export const authStyles = StyleSheet.create({
   container: {
@@ -30,7 +31,7 @@ export const authStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   welcomeTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: colors.primary,
     marginBottom: 8,

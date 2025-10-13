@@ -1,12 +1,13 @@
 import { StyleSheet } from 'react-native';
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { colors } from './colors';
+import { fonts } from './fonts';
 
 export const appHeaderOptions: NativeStackNavigationOptions = {
   title: 'WEIGHT',
   headerStyle: { backgroundColor: colors.header },
   headerTintColor: colors.primary,
-  headerTitleStyle: { fontWeight: '800' as '800', color: colors.primary },
+  headerTitleStyle: { fontFamily: fonts.mogra, color: colors.primary, fontSize: 28 },
   headerTitleAlign: 'center',
   headerShadowVisible: false,
 };

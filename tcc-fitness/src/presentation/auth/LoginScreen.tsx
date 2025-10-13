@@ -1,56 +1,69 @@
-import React, { useMemo, useState } from "react";
-import { View, TextInput, Text, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
-import { AuthViewModel } from "./AuthViewModel";
-import { authStyles } from "./styles/authStyles";
-import { colors } from "./styles/colors";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
+import { View, Text, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
+import { AuthViewModel } from "../viewmodels/AuthViewModel";
+import { ValidatedInput } from "../components/ui/ValidatedInput";
+import { authStyles } from "../styles/authStyles";
+import { colors } from "../styles/colors";
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [vmState, setVmState] = useState({ loading: false } as any);
+  const [vmState, setVmState] = useState({ loading: false, errors: {} } as any);
 
   const vm = useMemo(() => new AuthViewModel(setVmState), []);
+
+  // Limpar erros quando a tela for focada
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      vm.clearErrors();
+    });
+
+    return unsubscribe;
+  }, [navigation, vm]);
+
+  const handleLogin = useCallback(async () => {
+    const ok = await vm.login(email, senha);
+    if (ok) {
+      // Reseta a pilha de navegação para Main, sem possibilidade de voltar
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      });
+    }
+  }, [vm, email, senha, navigation]);
 
   return (
     <KeyboardAvoidingView style={authStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={authStyles.content}>
-          <Text style={authStyles.welcomeTitle}>Bem-vindo de volta!</Text>
+          <Text style={authStyles.welcomeTitle}>Bem-vindo!</Text>
           <Text style={authStyles.welcomeSubtitle}>Faça login para continuar</Text>
 
-          {vmState.error && (
-            <Text style={authStyles.feedbackText}>{vmState.error}</Text>
+          {vmState.errors.geral && (
+            <Text style={authStyles.feedbackText}>{vmState.errors.geral}</Text>
           )}
 
           <View style={authStyles.inputContainer}>
-            <TextInput
+            <ValidatedInput
               placeholder="Email"
-              placeholderTextColor={colors.placeholder}
               value={email}
               onChangeText={setEmail}
-              autoCapitalize="none"
+              error={vmState.errors.email}
               keyboardType="email-address"
-              style={authStyles.input}
+              autoCapitalize="none"
             />
 
-            <View style={authStyles.passwordContainer}>
-              <TextInput
-                placeholder="Senha"
-                placeholderTextColor={colors.placeholder}
-                value={senha}
-                onChangeText={setSenha}
-                secureTextEntry={true}
-                style={authStyles.input}
-              />
-            </View>
+            <ValidatedInput
+              placeholder="Senha"
+              value={senha}
+              onChangeText={setSenha}
+              error={vmState.errors.senha}
+              secureTextEntry={true}
+            />
           </View>
 
           <TouchableOpacity
             style={[authStyles.loginButton, vmState.loading && authStyles.loginButtonDisabled]}
-            onPress={async () => {
-              const ok = await vm.login(email, senha);
-              if (ok) navigation.navigate("Home");
-            }}
+            onPress={handleLogin}
             disabled={vmState.loading}
           >
             {vmState.loading ? (

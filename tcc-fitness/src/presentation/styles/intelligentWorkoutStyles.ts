@@ -236,4 +236,36 @@ export const intelligentWorkoutStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  // Loading Screen Styles
+  loadingOverlay: {
+    flex: 1,
+    backgroundColor: colors.background, // #10161E - padrão do projeto
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingMainContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  spinnerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 40,
+  },
+  spinner: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 8,
+    borderColor: 'transparent',
+    borderTopColor: '#bb86fc', // Light purple color for spinner
+    borderRightColor: '#bb86fc',
+    borderBottomColor: '#bb86fc',
+  },
+  loadingText: {
+    color: colors.primary, // #ffffff - texto branco padrão do projeto
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
 });

@@ -8,6 +8,7 @@ import {
   Modal,
   Alert,
   Animated,
+  Easing,
   LayoutAnimation,
   Platform,
   UIManager
@@ -46,6 +47,55 @@ interface SelectorProps {
   placeholder: string;
 }
 
+// Componente do Spinner de Loading
+const LoadingSpinner = () => {
+  const spinValue = useRef(new Animated.Value(0)).current;
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  const startRotation = useCallback(() => {
+    spinValue.setValue(0);
+    
+    const rotateAnimation = Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 2000, // 1 segundo por volta completa
+        useNativeDriver: true,
+        easing: Easing.linear,
+      })
+    );
+    
+    animationRef.current = rotateAnimation;
+    rotateAnimation.start();
+  }, [spinValue]);
+
+  React.useEffect(() => {
+    startRotation();
+
+    return () => {
+      if (animationRef.current) {
+        animationRef.current.stop();
+      }
+      spinValue.setValue(0);
+    };
+  }, [startRotation, spinValue]);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  return (
+    <View style={intelligentWorkoutStyles.spinnerContainer}>
+      <Animated.View 
+        style={[
+          intelligentWorkoutStyles.spinner,
+          { transform: [{ rotate: spin }] }
+        ]}
+      />
+    </View>
+  );
+};
+
 const IntelligentWorkoutScreen = ({ navigation }: any) => {
   const [formData, setFormData] = useState<FormData>({
     idade: '',
@@ -66,6 +116,7 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [openSelector, setOpenSelector] = useState<keyof FormData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Otimização: useCallback para evitar re-renders desnecessários
   const handleSettings = useCallback(() => {
@@ -207,12 +258,14 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
   ], []);
 
   const handleSubmit = useCallback(() => {
-    // Aqui seria implementada a lógica de envio
-    Alert.alert(
-      'Sucesso!', 
-      'Seu treino inteligente foi criado com sucesso!',
-      [{ text: 'OK', onPress: () => navigation.goBack() }]
-    );
+    setIsLoading(true);
+    
+    // Simular carregamento por 12 segundos (futuramente será a requisição para IA)
+    setTimeout(() => {
+      setIsLoading(false);
+      // Navegar para tela de aceitar treino
+      navigation.navigate('AcceptWorkout');
+    }, 2000); 
   }, [navigation]);
 
   const handleCancel = useCallback(() => {
@@ -406,6 +459,26 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
                 <Text style={intelligentWorkoutStyles.modalButtonConfirmText}>Sair</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Loading */}
+      <Modal
+        visible={isLoading}
+        transparent={true}
+        animationType="fade"
+        statusBarTranslucent={true}
+      >
+        <View style={intelligentWorkoutStyles.loadingOverlay}>
+          <View style={intelligentWorkoutStyles.loadingMainContainer}>
+            {/* Spinner animado */}
+            <LoadingSpinner />
+            
+            {/* Texto de carregamento */}
+            <Text style={intelligentWorkoutStyles.loadingText}>
+              Criando seu plano de treino personalizado...
+            </Text>
           </View>
         </View>
       </Modal>

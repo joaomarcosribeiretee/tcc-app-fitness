@@ -9,6 +9,7 @@ import HomeScreen from "./src/presentation/home/HomeScreen";
 import DietScreen from "./src/presentation/diet/DietScreen";
 import ProfileScreen from "./src/presentation/profile/ProfileScreen";
 import IntelligentWorkoutScreen from "./src/presentation/workout/IntelligentWorkoutScreen";
+import AcceptWorkoutScreen from "./src/presentation/workout/AcceptWorkoutScreen";
 import { TabIcon, bottomTabBarStyles } from "./src/presentation/components/layout/BottomTabBar";
 import { appHeaderOptions } from "./src/presentation/styles/appStyles";
 import { useAppFonts } from "./src/presentation/styles/fonts";
@@ -29,7 +30,6 @@ function MainTabs() {
         tabBarActiveTintColor: '#FFFFFF',
         tabBarInactiveTintColor: '#8E8E93',
         tabBarStyle: bottomTabBarStyles.tabBar,
-        tabBarLabelStyle: bottomTabBarStyles.tabBarLabel,
       })}
     >
       <Tab.Screen name="Workout" component={HomeScreen} options={{ tabBarLabel: '' }} />
@@ -85,6 +85,13 @@ export default function App() {
         <Stack.Screen 
           name="IntelligentWorkout" 
           component={IntelligentWorkoutScreen} 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="AcceptWorkout" 
+          component={AcceptWorkoutScreen} 
           options={{ 
             headerShown: false,
           }} 

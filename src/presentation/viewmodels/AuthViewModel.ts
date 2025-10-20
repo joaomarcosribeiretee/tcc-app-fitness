@@ -3,6 +3,7 @@ import * as secure from "../../infra/secureStore";
 
 type ValidationErrors = {
   nome?: string;
+  username?: string;
   email?: string;
   senha?: string;
   confirmarSenha?: string;
@@ -102,7 +103,7 @@ export class AuthViewModel {
     }
   }
 
-  async register(nome: string, email: string, senha: string, confirmarSenha?: string): Promise<boolean> {
+  async register(nome: string, username: string, email: string, senha: string, confirmarSenha?: string): Promise<boolean> {
     this.clearErrors();
     this.set({ loading: true });
     
@@ -114,6 +115,18 @@ export class AuthViewModel {
       hasErrors = true;
     } else if (nome.trim().length < 2) {
       this.setError('nome', 'Nome deve ter ao menos 2 caracteres');
+      hasErrors = true;
+    }
+
+    // Validação de username
+    if (!username || username.trim().length === 0) {
+      this.setError('username', 'Nome de usuário é obrigatório');
+      hasErrors = true;
+    } else if (username.trim().length < 3) {
+      this.setError('username', 'Nome de usuário deve ter ao menos 3 caracteres');
+      hasErrors = true;
+    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      this.setError('username', 'Use apenas letras, números e underscore');
       hasErrors = true;
     }
 
@@ -152,7 +165,7 @@ export class AuthViewModel {
     }
 
     try {
-      const { token } = await container.registerUseCase.exec(nome, email, senha);
+      const { token } = await container.registerUseCase.exec(nome, username, email, senha);
       await secure.setItem('auth_token', token);
       this.set({ loading: false, token });
       return true;

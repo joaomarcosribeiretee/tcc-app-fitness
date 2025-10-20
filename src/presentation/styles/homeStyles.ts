@@ -1,6 +1,5 @@
 import { StyleSheet } from 'react-native';
 import { colors } from './colors';
-import { fonts } from './fonts';
 
 export const homeStyles = StyleSheet.create({
   container: {
@@ -70,6 +69,54 @@ export const homeStyles = StyleSheet.create({
     color: colors.secondary,
     fontSize: 14,
     textAlign: 'center',
+  },
+  programsList: {
+    gap: 12,
+  },
+  programCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
+  },
+  programHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  programName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.primary,
+  },
+  programChevron: {
+    fontSize: 32,
+    color: colors.accent,
+    fontWeight: '300',
+  },
+  programDescription: {
+    fontSize: 14,
+    color: colors.secondary,
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  programFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  programDays: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.accent,
+    textTransform: 'uppercase',
   },
   smartWorkoutButton: {
     backgroundColor: '#449B5B',

@@ -1,6 +1,6 @@
 import { AuthRepository } from "../../domain/repositories/AuthRepository";
 
-const users = new Map<string, { id: string; nome: string; email: string; senhaHash: string }>();
+const users = new Map<string, { id: string; nome: string; username: string; email: string; senhaHash: string }>();
 
 export class InMemoryAuthRepository implements AuthRepository {
   async login(email: string, senha: string) {
@@ -10,11 +10,12 @@ export class InMemoryAuthRepository implements AuthRepository {
     return { token: "mock."+u.id };
   }
 
-  async register(nome: string, email: string, senha: string) {
+  async register(nome: string, username: string, email: string, senha: string) {
     await wait();
     if (Array.from(users.values()).some(x => x.email === email)) throw new Error("Email já em uso");
+    if (Array.from(users.values()).some(x => x.username === username)) throw new Error("Nome de usuário já em uso");
     const id = cryptoId();
-    users.set(id, { id, nome, email, senhaHash: hash(senha) });
+    users.set(id, { id, nome, username, email, senhaHash: hash(senha) });
     return { token: "mock."+id };
   }
 
@@ -23,7 +24,7 @@ export class InMemoryAuthRepository implements AuthRepository {
     const id = token.split(".")[1];
     const u = users.get(id);
     if (!u) throw new Error("Não autenticado");
-    return { id: u.id, nome: u.nome, email: u.email };
+    return { id: u.id, nome: u.nome, username: u.username, email: u.email };
   }
 }
 

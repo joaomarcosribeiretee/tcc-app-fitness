@@ -7,6 +7,7 @@ import { colors } from "../styles/colors";
 
 export default function RegisterScreen({ navigation }: any) {
   const [nome, setNome] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -24,7 +25,7 @@ export default function RegisterScreen({ navigation }: any) {
   }, [navigation, vm]);
 
   const handleRegister = useCallback(async () => {
-    const ok = await vm.register(nome, email, senha, confirmarSenha);
+    const ok = await vm.register(nome, username, email, senha, confirmarSenha);
     if (ok) {
       // Reseta a pilha de navegação para Main, sem possibilidade de voltar
       navigation.reset({
@@ -32,7 +33,7 @@ export default function RegisterScreen({ navigation }: any) {
         routes: [{ name: 'Main' }],
       });
     }
-  }, [vm, nome, email, senha, confirmarSenha, navigation]);
+  }, [vm, nome, username, email, senha, confirmarSenha, navigation]);
 
   return (
     <KeyboardAvoidingView style={authStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -51,6 +52,14 @@ export default function RegisterScreen({ navigation }: any) {
               onChangeText={setNome}
               error={vmState.errors.nome}
               autoCapitalize="words"
+            />
+
+            <ValidatedInput
+              placeholder="Nome de usuário"
+              value={username}
+              onChangeText={setUsername}
+              error={vmState.errors.username}
+              autoCapitalize="none"
             />
 
             <ValidatedInput

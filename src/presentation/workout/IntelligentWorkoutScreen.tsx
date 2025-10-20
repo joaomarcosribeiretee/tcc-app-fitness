@@ -260,11 +260,16 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
   const handleSubmit = useCallback(() => {
     setIsLoading(true);
     
-    // Simular carregamento por 12 segundos (futuramente será a requisição para IA)
+    // Simular carregamento (futuramente será a requisição para IA)
     setTimeout(() => {
       setIsLoading(false);
-      // Navegar para tela de aceitar treino
-      navigation.navigate('AcceptWorkout');
+      
+      // Importar e gerar plano mock (futuramente será retornado pela IA)
+      const { generateMockWorkoutPlan } = require('../../domain/entities/WorkoutPlan');
+      const workoutPlan = generateMockWorkoutPlan();
+      
+      // Navegar para tela de plano de treino
+      navigation.navigate('WorkoutPlan', { workoutPlan });
     }, 2000); 
   }, [navigation]);
 

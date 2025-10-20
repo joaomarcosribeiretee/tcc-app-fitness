@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { AppHeader } from '../components/layout/AppHeader';
-import { homeStyles } from '../../presentation/styles/homeStyles';  
+import { homeStyles } from '../../presentation/styles/homeStyles';
+import { WorkoutPlan } from '../../domain/entities/WorkoutPlan';
+import { loadWorkoutPlans } from '../../infra/workoutPlanStorage';
 
 const HomeScreen = ({ navigation }: any) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
+
+  // Carrega os planos salvos quando a tela recebe foco
+  useFocusEffect(
+    useCallback(() => {
+      const loadPlans = async () => {
+        try {
+          const plans = await loadWorkoutPlans();
+          setWorkoutPlans(plans);
+        } catch (error) {
+          console.error('Error loading plans:', error);
+        }
+      };
+      loadPlans();
+    }, [])
+  );
 
   const handleSettings = () => {
     setShowLogoutModal(true);
@@ -12,22 +31,20 @@ const HomeScreen = ({ navigation }: any) => {
 
   const handleLogout = () => {
     setShowLogoutModal(false);
-    // Reseta a pilha de navegação para Login, sem possibilidade de voltar
     navigation.reset({
       index: 0,
       routes: [{ name: 'Login' }],
     });
   };
 
+  const handleProgramPress = (workoutPlan: WorkoutPlan) => {
+    navigation.navigate('WorkoutPlan', { workoutPlan, fromHome: true });
+  };
+
   return (
     <View style={homeStyles.container}>
-      {/* Header */}
-      <AppHeader 
-        title="WEIGHT"
-        onSettingsPress={handleSettings}
-      />
+      <AppHeader title="WEIGHT" onSettingsPress={handleSettings} />
 
-      {/* Modal de Logout */}
       <Modal
         visible={showLogoutModal}
         transparent={true}
@@ -59,29 +76,41 @@ const HomeScreen = ({ navigation }: any) => {
       </Modal>
 
       <ScrollView style={homeStyles.content} showsVerticalScrollIndicator={false}>
-        {/* Título principal */}
         <View style={homeStyles.titleContainer}>
           <Text style={homeStyles.title}>Meu Plano</Text>
           <View style={homeStyles.titleUnderline} />
-        </View>
-
-        {/* Treino Rápido */}
-        <View style={homeStyles.section}>
-          <Text style={homeStyles.sectionTitle}>Treino rápido</Text>
-          <TouchableOpacity style={homeStyles.quickWorkoutButton}>
-            <Text style={homeStyles.quickWorkoutText}>Começar agora</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Programas de Treino */}
         <View style={homeStyles.section}>
           <Text style={homeStyles.sectionTitle}>Programas de Treino</Text>
           
-          {/* Lista de programas (vazia inicialmente) */}
-          <View style={homeStyles.programsContainer}>
-            <Text style={homeStyles.emptyText}>Nenhum programa criado ainda</Text>
-            <Text style={homeStyles.emptySubtext}>Crie seu primeiro programa de treino</Text>
-          </View>
+          {workoutPlans.length === 0 ? (
+            <View style={homeStyles.programsContainer}>
+              <Text style={homeStyles.emptyText}>Nenhum programa criado ainda</Text>
+              <Text style={homeStyles.emptySubtext}>Crie seu primeiro programa de treino</Text>
+            </View>
+          ) : (
+            <View style={homeStyles.programsList}>
+              {workoutPlans.map((plan) => (
+                <TouchableOpacity
+                  key={plan.id}
+                  style={homeStyles.programCard}
+                  onPress={() => handleProgramPress(plan)}
+                  activeOpacity={0.7}
+                >
+                  <View style={homeStyles.programHeader}>
+                    <Text style={homeStyles.programName}>{plan.name}</Text>
+                    <Text style={homeStyles.programChevron}>›</Text>
+                  </View>
+                  <Text style={homeStyles.programDescription}>{plan.description}</Text>
+                  <View style={homeStyles.programFooter}>
+                    <Text style={homeStyles.programDays}>{plan.days.length} dias</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Botão Treino Inteligente */}

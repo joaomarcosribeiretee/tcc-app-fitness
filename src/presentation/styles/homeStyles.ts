@@ -45,6 +45,7 @@ export const homeStyles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
     marginTop: 8,
+    marginBottom: 24,
   },
   quickWorkoutText: {
     color: colors.buttonText,

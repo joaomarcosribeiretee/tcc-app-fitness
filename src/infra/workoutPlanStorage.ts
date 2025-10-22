@@ -1,15 +1,48 @@
 import * as secure from './secureStore';
 import { WorkoutPlan } from '../domain/entities/WorkoutPlan';
 
-const STORAGE_KEY = 'workout_plans';
+/**
+ * Extrai o userId do token
+ * Token format: "mock.{userId}"
+ */
+async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const token = await secure.getItem('auth_token');
+    if (!token) return null;
+    
+    // Extrai o userId do token (formato: "mock.{userId}")
+    const parts = token.split('.');
+    if (parts.length >= 2) {
+      return parts[1]; // Retorna o userId
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting current user ID:', error);
+    return null;
+  }
+}
 
 /**
- * Salva os planos de treino no storage
+ * Gera a chave de storage específica para o usuário
+ */
+function getUserStorageKey(userId: string): string {
+  return `workout_plans_${userId}`;
+}
+
+/**
+ * Salva os planos de treino no storage do usuário atual
  */
 export async function saveWorkoutPlans(plans: WorkoutPlan[]): Promise<void> {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    const storageKey = getUserStorageKey(userId);
     const json = JSON.stringify(plans);
-    await secure.setItem(STORAGE_KEY, json);
+    await secure.setItem(storageKey, json);
+    console.log(`Saved ${plans.length} plans for user ${userId}`);
   } catch (error) {
     console.error('Error saving workout plans:', error);
     throw error;
@@ -17,14 +50,26 @@ export async function saveWorkoutPlans(plans: WorkoutPlan[]): Promise<void> {
 }
 
 /**
- * Carrega os planos de treino do storage
+ * Carrega os planos de treino do storage do usuário atual
  */
 export async function loadWorkoutPlans(): Promise<WorkoutPlan[]> {
   try {
-    const json = await secure.getItem(STORAGE_KEY);
-    if (!json) return [];
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.log('No user logged in, returning empty plans');
+      return [];
+    }
+    
+    const storageKey = getUserStorageKey(userId);
+    const json = await secure.getItem(storageKey);
+    if (!json) {
+      console.log(`No plans found for user ${userId}`);
+      return [];
+    }
     
     const plans = JSON.parse(json);
+    console.log(`Loaded ${plans.length} plans for user ${userId}`);
+    
     // Reconverter as datas
     return plans.map((plan: any) => ({
       ...plan,
@@ -37,20 +82,23 @@ export async function loadWorkoutPlans(): Promise<WorkoutPlan[]> {
 }
 
 /**
- * Adiciona um novo plano de treino
+ * Adiciona um novo plano de treino para o usuário atual
  */
 export async function addWorkoutPlan(plan: WorkoutPlan): Promise<void> {
   try {
-    console.log('Loading existing plans...');
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+    
+    console.log(`Adding plan "${plan.name}" for user ${userId}`);
     const plans = await loadWorkoutPlans();
     console.log('Existing plans count:', plans.length);
     
-    console.log('Adding new plan:', plan.name);
     plans.push(plan);
     
-    console.log('Saving plans... Total:', plans.length);
     await saveWorkoutPlans(plans);
-    console.log('Plans saved successfully');
+    console.log('Plan added successfully');
   } catch (error) {
     console.error('Error adding workout plan:', error);
     throw error;
@@ -58,13 +106,19 @@ export async function addWorkoutPlan(plan: WorkoutPlan): Promise<void> {
 }
 
 /**
- * Remove um plano de treino
+ * Remove um plano de treino do usuário atual
  */
 export async function removeWorkoutPlan(planId: string): Promise<void> {
   try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      throw new Error('Usuário não autenticado');
+    }
+    
     const plans = await loadWorkoutPlans();
     const filtered = plans.filter(p => p.id !== planId);
     await saveWorkoutPlans(filtered);
+    console.log(`Removed plan ${planId} for user ${userId}`);
   } catch (error) {
     console.error('Error removing workout plan:', error);
     throw error;
@@ -72,11 +126,20 @@ export async function removeWorkoutPlan(planId: string): Promise<void> {
 }
 
 /**
- * Limpa todos os planos
+ * Limpa todos os planos do usuário atual
+ * (Útil para logout ou reset de dados)
  */
 export async function clearWorkoutPlans(): Promise<void> {
   try {
-    await secure.deleteItem(STORAGE_KEY);
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.log('No user logged in, nothing to clear');
+      return;
+    }
+    
+    const storageKey = getUserStorageKey(userId);
+    await secure.deleteItem(storageKey);
+    console.log(`Cleared all plans for user ${userId}`);
   } catch (error) {
     console.error('Error clearing workout plans:', error);
     throw error;

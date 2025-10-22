@@ -5,7 +5,6 @@ import {
   ScrollView, 
   TouchableOpacity, 
   TextInput, 
-  Modal,
   Alert,
   Animated,
   Easing,
@@ -14,7 +13,10 @@ import {
   UIManager
 } from 'react-native';
 import { AppHeader } from '../components/layout/AppHeader';
+import RejectModal from '../components/ui/RejectModal';
+import LoadingModal from '../components/ui/LoadingModal';
 import { intelligentWorkoutStyles } from '../styles/intelligentWorkoutStyles';
+import * as secure from '../../infra/secureStore';
 
 // Habilitar animações de layout no Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -47,55 +49,6 @@ interface SelectorProps {
   placeholder: string;
 }
 
-// Componente do Spinner de Loading
-const LoadingSpinner = () => {
-  const spinValue = useRef(new Animated.Value(0)).current;
-  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
-
-  const startRotation = useCallback(() => {
-    spinValue.setValue(0);
-    
-    const rotateAnimation = Animated.loop(
-      Animated.timing(spinValue, {
-        toValue: 1,
-        duration: 2000, // 1 segundo por volta completa
-        useNativeDriver: true,
-        easing: Easing.linear,
-      })
-    );
-    
-    animationRef.current = rotateAnimation;
-    rotateAnimation.start();
-  }, [spinValue]);
-
-  React.useEffect(() => {
-    startRotation();
-
-    return () => {
-      if (animationRef.current) {
-        animationRef.current.stop();
-      }
-      spinValue.setValue(0);
-    };
-  }, [startRotation, spinValue]);
-
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  return (
-    <View style={intelligentWorkoutStyles.spinnerContainer}>
-      <Animated.View 
-        style={[
-          intelligentWorkoutStyles.spinner,
-          { transform: [{ rotate: spin }] }
-        ]}
-      />
-    </View>
-  );
-};
-
 const IntelligentWorkoutScreen = ({ navigation }: any) => {
   const [formData, setFormData] = useState<FormData>({
     idade: '',
@@ -123,12 +76,23 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
     setShowLogoutModal(true);
   }, []);
 
-  const handleLogout = useCallback(() => {
-    setShowLogoutModal(false);
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+  const handleLogout = useCallback(async () => {
+    try {
+      await secure.deleteItem('auth_token');
+      console.log('Token removido do SecureStore');
+      setShowLogoutModal(false);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      setShowLogoutModal(false);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }
   }, [navigation]);
 
   const handleInputChange = useCallback(<K extends keyof FormData>(field: K, value: FormData[K]) => {
@@ -438,55 +402,22 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
       />
 
       {/* Modal de Logout */}
-      <Modal
+      <RejectModal
         visible={showLogoutModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowLogoutModal(false)}
-      >
-        <View style={intelligentWorkoutStyles.modalOverlay}>
-          <View style={intelligentWorkoutStyles.modalContent}>
-            <Text style={intelligentWorkoutStyles.modalTitle}>Sair da conta</Text>
-            <Text style={intelligentWorkoutStyles.modalText}>Tem certeza que deseja sair?</Text>
-
-            <View style={intelligentWorkoutStyles.modalButtons}>
-              <TouchableOpacity
-                style={intelligentWorkoutStyles.modalButtonCancel}
-                onPress={() => setShowLogoutModal(false)}
-              >
-                <Text style={intelligentWorkoutStyles.modalButtonCancelText}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={intelligentWorkoutStyles.modalButtonConfirm}
-                onPress={handleLogout}
-              >
-                <Text style={intelligentWorkoutStyles.modalButtonConfirmText}>Sair</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title="Sair da conta"
+        message="Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente."
+        confirmText="Sim, sair"
+        cancelText="Cancelar"
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
 
       {/* Modal de Loading */}
-      <Modal
+      <LoadingModal
         visible={isLoading}
-        transparent={true}
-        animationType="fade"
-        statusBarTranslucent={true}
-      >
-        <View style={intelligentWorkoutStyles.loadingOverlay}>
-          <View style={intelligentWorkoutStyles.loadingMainContainer}>
-            {/* Spinner animado */}
-            <LoadingSpinner />
-            
-            {/* Texto de carregamento */}
-            <Text style={intelligentWorkoutStyles.loadingText}>
-              Criando seu plano de treino personalizado...
-            </Text>
-          </View>
-        </View>
-      </Modal>
+        title="Criando seu plano de treino personalizado..."
+        subtitle="Isso pode levar alguns segundos"
+      />
 
       <Animated.ScrollView 
         style={[intelligentWorkoutStyles.content, { opacity: fadeAnim }]} 

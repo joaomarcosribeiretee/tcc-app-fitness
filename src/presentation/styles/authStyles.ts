@@ -43,21 +43,19 @@ export const authStyles = StyleSheet.create({
     marginBottom: 40,
     textAlign: 'center',
   },
-  feedbackText: {
-    color: colors.error,
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 16,
-    opacity: 0.9,
-    backgroundColor: 'rgba(255, 0, 0, 0.1)',
-    padding: 12,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.error,
-  },
   inputContainer: {
     marginBottom: 30,
     width: '100%',
+  },
+  generalErrorContainer: {
+    marginBottom: 12,
+    width: '100%',
+  },
+  generalErrorText: {
+    color: colors.error,
+    fontSize: 12,
+    marginLeft: 4,
+    fontWeight: '500',
   },
   inputWrapper: {
     marginBottom: 20,

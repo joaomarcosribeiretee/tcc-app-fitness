@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { AppHeader } from '../components/layout/AppHeader';
+import RejectModal from '../components/ui/RejectModal';
 import { colors } from '../styles/colors';
-import { homeStyles } from '../styles/homeStyles';
+import * as secure from '../../infra/secureStore';
 
 const ProfileScreen = ({ navigation }: any) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -11,12 +12,28 @@ const ProfileScreen = ({ navigation }: any) => {
     setShowLogoutModal(true);
   };
 
-  const handleLogout = () => {
-    setShowLogoutModal(false);
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+  const handleLogout = async () => {
+    try {
+      // Limpar o token do SecureStore
+      await secure.deleteItem('auth_token');
+      console.log('Token removido do SecureStore');
+      
+      setShowLogoutModal(false);
+      
+      // Navegar para a tela de login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      // Mesmo com erro, navegar para login
+      setShowLogoutModal(false);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }
   };
 
   return (
@@ -26,35 +43,15 @@ const ProfileScreen = ({ navigation }: any) => {
         onSettingsPress={handleSettings}
       />
 
-      <Modal
+      <RejectModal
         visible={showLogoutModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowLogoutModal(false)}
-      >
-        <View style={homeStyles.modalOverlay}>
-          <View style={homeStyles.modalContent}>
-            <Text style={homeStyles.modalTitle}>Sair da conta</Text>
-            <Text style={homeStyles.modalText}>Tem certeza que deseja sair?</Text>
-            
-            <View style={homeStyles.modalButtons}>
-              <TouchableOpacity 
-                style={homeStyles.modalButtonCancel}
-                onPress={() => setShowLogoutModal(false)}
-              >
-                <Text style={homeStyles.modalButtonCancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={homeStyles.modalButtonConfirm}
-                onPress={handleLogout}
-              >
-                <Text style={homeStyles.modalButtonConfirmText}>Sair</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title="Sair da conta"
+        message="Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente."
+        confirmText="Sim, sair"
+        cancelText="Cancelar"
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
       
       <View style={styles.content}>
         <Text style={styles.title}>Meu Perfil</Text>

@@ -1,10 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { AppHeader } from '../components/layout/AppHeader';
+import RejectModal from '../components/ui/RejectModal';
 import { homeStyles } from '../../presentation/styles/homeStyles';
 import { WorkoutPlan } from '../../domain/entities/WorkoutPlan';
 import { loadWorkoutPlans } from '../../infra/workoutPlanStorage';
+import * as secure from '../../infra/secureStore';
 
 const HomeScreen = ({ navigation }: any) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -29,12 +31,23 @@ const HomeScreen = ({ navigation }: any) => {
     setShowLogoutModal(true);
   };
 
-  const handleLogout = () => {
-    setShowLogoutModal(false);
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+  const handleLogout = async () => {
+    try {
+      await secure.deleteItem('auth_token');
+      console.log('Token removido do SecureStore');
+      setShowLogoutModal(false);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      setShowLogoutModal(false);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }
   };
 
   const handleProgramPress = (workoutPlan: WorkoutPlan) => {
@@ -45,41 +58,29 @@ const HomeScreen = ({ navigation }: any) => {
     <View style={homeStyles.container}>
       <AppHeader title="WEIGHT" onSettingsPress={handleSettings} />
 
-      <Modal
+      <RejectModal
         visible={showLogoutModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowLogoutModal(false)}
-      >
-        <View style={homeStyles.modalOverlay}>
-          <View style={homeStyles.modalContent}>
-            <Text style={homeStyles.modalTitle}>Sair da conta</Text>
-            <Text style={homeStyles.modalText}>Tem certeza que deseja sair?</Text>
-            
-            <View style={homeStyles.modalButtons}>
-              <TouchableOpacity 
-                style={homeStyles.modalButtonCancel}
-                onPress={() => setShowLogoutModal(false)}
-              >
-                <Text style={homeStyles.modalButtonCancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={homeStyles.modalButtonConfirm}
-                onPress={handleLogout}
-              >
-                <Text style={homeStyles.modalButtonConfirmText}>Sair</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title="Sair da conta"
+        message="Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente."
+        confirmText="Sim, sair"
+        cancelText="Cancelar"
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
 
       <ScrollView style={homeStyles.content} showsVerticalScrollIndicator={false}>
         <View style={homeStyles.titleContainer}>
           <Text style={homeStyles.title}>Meu Plano</Text>
           <View style={homeStyles.titleUnderline} />
         </View>
+
+        {/* Botão Treino Rápido */}
+        <TouchableOpacity 
+          style={homeStyles.quickWorkoutButton}
+          onPress={() => navigation.navigate('IntelligentWorkout')}
+        >
+          <Text style={homeStyles.quickWorkoutText}>TREINO RÁPIDO</Text>
+        </TouchableOpacity>
 
         {/* Programas de Treino */}
         <View style={homeStyles.section}>

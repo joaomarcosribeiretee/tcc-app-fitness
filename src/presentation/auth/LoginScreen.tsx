@@ -38,11 +38,12 @@ export default function LoginScreen({ navigation }: any) {
           <Text style={authStyles.welcomeTitle}>Bem-vindo!</Text>
           <Text style={authStyles.welcomeSubtitle}>Faça login para continuar</Text>
 
-          {vmState.errors.geral && (
-            <Text style={authStyles.feedbackText}>{vmState.errors.geral}</Text>
-          )}
-
           <View style={authStyles.inputContainer}>
+            {vmState.errors.geral && (
+              <View style={authStyles.generalErrorContainer}>
+                <Text style={authStyles.generalErrorText}>{vmState.errors.geral}</Text>
+              </View>
+            )}
             <ValidatedInput
               placeholder="Email"
               value={email}

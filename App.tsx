@@ -11,6 +11,8 @@ import ProfileScreen from "./src/presentation/profile/ProfileScreen";
 import IntelligentWorkoutScreen from "./src/presentation/workout/IntelligentWorkoutScreen";
 import WorkoutPlanScreen from "./src/presentation/workout/WorkoutPlanScreen";
 import WorkoutDetailScreen from "./src/presentation/workout/WorkoutDetailScreen";
+import WorkoutAdjustmentsScreen from "./src/presentation/workout/WorkoutAdjustmentsScreen";
+import WorkoutExecutionScreen from "./src/presentation/workout/WorkoutExecutionScreen";
 import { TabIcon, bottomTabBarStyles } from "./src/presentation/components/layout/BottomTabBar";
 import { appHeaderOptions } from "./src/presentation/styles/appStyles";
 import { useAppFonts } from "./src/presentation/styles/fonts";
@@ -100,6 +102,20 @@ export default function App() {
         <Stack.Screen 
           name="WorkoutDetail" 
           component={WorkoutDetailScreen} 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="WorkoutAdjustments" 
+          component={WorkoutAdjustmentsScreen} 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="WorkoutExecution" 
+          component={WorkoutExecutionScreen} 
           options={{ 
             headerShown: false,
           }} 

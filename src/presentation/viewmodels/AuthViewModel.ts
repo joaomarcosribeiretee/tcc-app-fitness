@@ -82,7 +82,7 @@ export class AuthViewModel {
       this.setError('senha', 'Senha é obrigatória');
       hasErrors = true;
     } else if (senha.length < 6) {
-      this.setError('senha', 'Senha deve ter ao menos 6 caracteres');
+      this.setError('senha', 'Senha deve ter no mínimo 6 caracteres');
       hasErrors = true;
     }
 
@@ -114,7 +114,7 @@ export class AuthViewModel {
       this.setError('nome', 'Nome é obrigatório');
       hasErrors = true;
     } else if (nome.trim().length < 2) {
-      this.setError('nome', 'Nome deve ter ao menos 2 caracteres');
+      this.setError('nome', 'Nome deve ter no mínimo 2 caracteres');
       hasErrors = true;
     }
 
@@ -123,7 +123,7 @@ export class AuthViewModel {
       this.setError('username', 'Nome de usuário é obrigatório');
       hasErrors = true;
     } else if (username.trim().length < 3) {
-      this.setError('username', 'Nome de usuário deve ter ao menos 3 caracteres');
+      this.setError('username', 'Nome de usuário deve ter no mínimo 3 caracteres');
       hasErrors = true;
     } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       this.setError('username', 'Use apenas letras, números e underscore');
@@ -144,7 +144,7 @@ export class AuthViewModel {
       this.setError('senha', 'Senha é obrigatória');
       hasErrors = true;
     } else if (senha.length < 6) {
-      this.setError('senha', 'Senha deve ter ao menos 6 caracteres');
+      this.setError('senha', 'Senha deve ter no mínimo 6 caracteres');
       hasErrors = true;
     }
 

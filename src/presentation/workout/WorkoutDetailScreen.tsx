@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { AppHeader } from '../components/layout/AppHeader';
 import { workoutDetailStyles } from '../styles/workoutDetailStyles';
 import { mockWorkouts } from '../../data/mockWorkouts';
-import { RoutineType } from '../../domain/entities/Workout';
+import { RoutineType, Exercise } from '../../domain/entities/Workout';
+import { loadWorkoutPlans } from '../../infra/workoutPlanStorage';
+import { WorkoutPlanDay } from '../../domain/entities/WorkoutPlan';
 
 interface WorkoutDetailScreenProps {
   navigation: any;
@@ -12,6 +14,8 @@ interface WorkoutDetailScreenProps {
       routineType?: RoutineType;
       dayName?: string;
       planId?: string;
+      fromHome?: boolean;
+      dayId?: string; // ID do dia específico no plano
     };
   };
 }
@@ -19,14 +23,70 @@ interface WorkoutDetailScreenProps {
 const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) => {
   const routineType: RoutineType = route.params?.routineType || 'upper';
   const dayName = route.params?.dayName;
+  const fromHome = route.params?.fromHome || false;
+  const planId = route.params?.planId;
+  const dayId = route.params?.dayId;
+  
+  const [workoutDay, setWorkoutDay] = useState<WorkoutPlanDay | null>(null);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Carregar os exercícios do dia específico do plano salvo
+  useEffect(() => {
+    const loadWorkoutDay = async () => {
+      console.log('WorkoutDetailScreen - Carregando exercícios, planId:', planId, 'dayId:', dayId, 'routineType:', routineType);
+      try {
+        if (planId && dayId) {
+          // Buscar do plano salvo
+          console.log('WorkoutDetailScreen - Buscando do plano salvo...');
+          const plans = await loadWorkoutPlans();
+          console.log('WorkoutDetailScreen - Planos encontrados:', plans.length);
+          const plan = plans.find(p => p.id === planId);
+          console.log('WorkoutDetailScreen - Plano encontrado:', plan ? 'Sim' : 'Não');
+          
+          if (plan) {
+            const day = plan.days.find(d => d.id === dayId);
+            console.log('WorkoutDetailScreen - Dia encontrado:', day ? 'Sim' : 'Não');
+            if (day) {
+              setWorkoutDay(day);
+              setExercises(day.exercises);
+              console.log('WorkoutDetailScreen - Exercícios carregados do plano:', day.exercises.map(ex => ({ name: ex.name, sets: ex.sets })));
+            }
+          }
+        } else {
+          // Fallback para mockWorkouts se não tiver planId/dayId
+          console.log('WorkoutDetailScreen - Usando fallback para mockWorkouts');
+          const mockWorkout = mockWorkouts[routineType];
+          if (mockWorkout) {
+            setExercises(mockWorkout.exercises);
+            console.log('WorkoutDetailScreen - Exercícios carregados do mock:', mockWorkout.exercises.map(ex => ({ name: ex.name, sets: ex.sets })));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading workout day:', error);
+        // Fallback para mockWorkouts em caso de erro
+        const mockWorkout = mockWorkouts[routineType];
+        if (mockWorkout) {
+          setExercises(mockWorkout.exercises);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadWorkoutDay();
+  }, [planId, dayId, routineType]);
+
   const workout = mockWorkouts[routineType];
 
   const handleStartWorkout = () => {
-    Alert.alert(
-      'Iniciar Treino',
-      'Funcionalidade de execução de treino será implementada em breve!',
-      [{ text: 'OK' }]
-    );
+    navigation.navigate('WorkoutExecution', {
+      routineType,
+      dayName,
+      planId,
+      dayId,
+      exercises: exercises, // Passar os exercícios específicos
+    });
   };
 
   const handleBack = () => {
@@ -68,7 +128,7 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
             
             <View style={workoutDetailStyles.infoItem}>
               <Text style={workoutDetailStyles.infoLabel}>Exercícios:</Text>
-              <Text style={workoutDetailStyles.infoValue}>{workout.exercises.length}</Text>
+              <Text style={workoutDetailStyles.infoValue}>{exercises.length}</Text>
             </View>
             
             <View style={workoutDetailStyles.difficultyBadge}>
@@ -81,7 +141,7 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
         <View style={workoutDetailStyles.exercisesList}>
           <Text style={workoutDetailStyles.sectionTitle}>Exercícios</Text>
           
-          {workout.exercises.map((exercise, index) => (
+          {exercises.map((exercise, index) => (
             <View key={exercise.id} style={workoutDetailStyles.exerciseCard}>
               <View style={workoutDetailStyles.exerciseHeader}>
                 <View style={workoutDetailStyles.exerciseInfo}>
@@ -122,12 +182,15 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
 
       {/* Botões de ação */}
       <View style={workoutDetailStyles.buttonContainer}>
-        <TouchableOpacity
-          style={workoutDetailStyles.startButton}
-          onPress={handleStartWorkout}
-        >
-          <Text style={workoutDetailStyles.startButtonText}>INICIAR TREINO</Text>
-        </TouchableOpacity>
+        {/* Só mostra o botão INICIAR TREINO se vier da tela inicial */}
+        {fromHome && (
+          <TouchableOpacity
+            style={workoutDetailStyles.startButton}
+            onPress={handleStartWorkout}
+          >
+            <Text style={workoutDetailStyles.startButtonText}>INICIAR TREINO</Text>
+          </TouchableOpacity>
+        )}
         
         <TouchableOpacity
           style={workoutDetailStyles.backButton}

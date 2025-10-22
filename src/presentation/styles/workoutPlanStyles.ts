@@ -192,5 +192,13 @@ export const workoutPlanStyles = StyleSheet.create({
     color: colors.accent,
     textAlign: 'center',
   },
+  // Estilos para botões desabilitados
+  acceptButtonDisabled: {
+    backgroundColor: 'rgba(76, 175, 80, 0.5)', // Verde com 50% de opacidade
+    opacity: 0.7,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
 });
 

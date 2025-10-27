@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { AppHeader } from '../components/layout/AppHeader';
+import RejectModal from '../components/ui/RejectModal';
 import { workoutDetailStyles } from '../styles/workoutDetailStyles';
 import { mockWorkouts } from '../../data/mockWorkouts';
 import { RoutineType, Exercise } from '../../domain/entities/Workout';
@@ -16,6 +17,7 @@ interface WorkoutDetailScreenProps {
       planId?: string;
       fromHome?: boolean;
       dayId?: string; // ID do dia específico no plano
+      workoutPlan?: any; // Plano atual (ainda não salvo)
     };
   };
 }
@@ -26,44 +28,62 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
   const fromHome = route.params?.fromHome || false;
   const planId = route.params?.planId;
   const dayId = route.params?.dayId;
+  const workoutPlan = route.params?.workoutPlan; // Plano atual (ainda não salvo)
   
   const [workoutDay, setWorkoutDay] = useState<WorkoutPlanDay | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Carregar os exercícios do dia específico do plano salvo
+  // Carregar os exercícios do dia específico do plano
   useEffect(() => {
     const loadWorkoutDay = async () => {
-      console.log('WorkoutDetailScreen - Carregando exercícios, planId:', planId, 'dayId:', dayId, 'routineType:', routineType);
+      console.log('=== WorkoutDetailScreen Debug ===');
+      console.log('planId:', planId, 'dayId:', dayId, 'routineType:', routineType);
+      console.log('workoutPlan:', workoutPlan ? 'Presente' : 'Ausente');
+      
       try {
-        if (planId && dayId) {
-          // Buscar do plano salvo
-          console.log('WorkoutDetailScreen - Buscando do plano salvo...');
+        // PRIORIDADE 1: Usar plano atual (ainda não salvo) se disponível
+        if (workoutPlan && dayId) {
+          console.log('✅ Usando plano atual (ainda não salvo)');
+          const day = workoutPlan.days.find(d => d.id === dayId);
+          if (day) {
+            setWorkoutDay(day);
+            setExercises(day.exercises);
+            console.log('✅ Exercícios carregados do plano atual:', day.exercises.map(ex => ({ name: ex.name, sets: ex.sets })));
+          } else {
+            console.log('❌ Dia não encontrado no plano atual');
+          }
+        }
+        // PRIORIDADE 2: Buscar do plano salvo
+        else if (planId && dayId) {
+          console.log('🔍 Buscando do plano salvo...');
           const plans = await loadWorkoutPlans();
-          console.log('WorkoutDetailScreen - Planos encontrados:', plans.length);
+          console.log('Planos encontrados:', plans.length);
           const plan = plans.find(p => p.id === planId);
-          console.log('WorkoutDetailScreen - Plano encontrado:', plan ? 'Sim' : 'Não');
+          console.log('Plano encontrado:', plan ? 'Sim' : 'Não');
           
           if (plan) {
             const day = plan.days.find(d => d.id === dayId);
-            console.log('WorkoutDetailScreen - Dia encontrado:', day ? 'Sim' : 'Não');
+            console.log('Dia encontrado:', day ? 'Sim' : 'Não');
             if (day) {
               setWorkoutDay(day);
               setExercises(day.exercises);
-              console.log('WorkoutDetailScreen - Exercícios carregados do plano:', day.exercises.map(ex => ({ name: ex.name, sets: ex.sets })));
+              console.log('✅ Exercícios carregados do plano salvo:', day.exercises.map(ex => ({ name: ex.name, sets: ex.sets })));
             }
           }
-        } else {
-          // Fallback para mockWorkouts se não tiver planId/dayId
-          console.log('WorkoutDetailScreen - Usando fallback para mockWorkouts');
+        }
+        // PRIORIDADE 3: Fallback para mockWorkouts
+        else {
+          console.log('🔄 Usando fallback para mockWorkouts');
           const mockWorkout = mockWorkouts[routineType];
           if (mockWorkout) {
             setExercises(mockWorkout.exercises);
-            console.log('WorkoutDetailScreen - Exercícios carregados do mock:', mockWorkout.exercises.map(ex => ({ name: ex.name, sets: ex.sets })));
+            console.log('✅ Exercícios carregados do mock:', mockWorkout.exercises.map(ex => ({ name: ex.name, sets: ex.sets })));
           }
         }
       } catch (error) {
-        console.error('Error loading workout day:', error);
+        console.error('❌ Error loading workout day:', error);
         // Fallback para mockWorkouts em caso de erro
         const mockWorkout = mockWorkouts[routineType];
         if (mockWorkout) {
@@ -71,11 +91,12 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
         }
       } finally {
         setLoading(false);
+        console.log('===============================');
       }
     };
 
     loadWorkoutDay();
-  }, [planId, dayId, routineType]);
+  }, [planId, dayId, routineType, workoutPlan]);
 
   const workout = mockWorkouts[routineType];
 
@@ -93,10 +114,34 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
     navigation.goBack();
   };
 
+  const handleSettings = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { deleteItem } = await import('../../infra/secureStore');
+      await deleteItem('auth_token');
+      console.log('Token removido do SecureStore');
+      setShowLogoutModal(false);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      setShowLogoutModal(false);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }
+  };
+
   if (!workout) {
     return (
       <View style={workoutDetailStyles.container}>
-        <AppHeader title="WEIGHT" onSettingsPress={() => {}} />
+        <AppHeader title="WEIGHT" onSettingsPress={handleSettings} />
         <View style={workoutDetailStyles.emptyState}>
           <Text style={workoutDetailStyles.emptyText}>Treino não encontrado</Text>
           <Text style={workoutDetailStyles.emptySubtext}>
@@ -109,8 +154,18 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
 
   return (
     <View style={workoutDetailStyles.container}>
-      <AppHeader title="WEIGHT" onSettingsPress={() => {}} />
+      <AppHeader title="WEIGHT" onSettingsPress={handleSettings} />
       
+      <RejectModal
+        visible={showLogoutModal}
+        title="Sair da conta"
+        message="Tem certeza que deseja sair da sua conta? Você precisará fazer login novamente."
+        confirmText="Sim, sair"
+        cancelText="Cancelar"
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
+
       <ScrollView style={workoutDetailStyles.content} showsVerticalScrollIndicator={false}>
         {/* Cabeçalho com informações do treino */}
         <View style={workoutDetailStyles.headerInfo}>

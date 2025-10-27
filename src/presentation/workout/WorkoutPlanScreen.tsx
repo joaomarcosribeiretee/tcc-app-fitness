@@ -164,7 +164,8 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
       dayName,
       planId: workoutPlan.id,
       dayId: dayId, // Passar o ID do dia específico
-      fromHome: fromHome
+      fromHome: fromHome,
+      workoutPlan: workoutPlan // Passar o plano atual (ainda não salvo)
     });
   };
 

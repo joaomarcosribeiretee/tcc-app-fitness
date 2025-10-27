@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import LoginScreen from "./src/presentation/auth/LoginScreen";
 import RegisterScreen from "./src/presentation/auth/RegisterScreen";
 import HomeScreen from "./src/presentation/home/HomeScreen";
@@ -13,6 +14,9 @@ import WorkoutPlanScreen from "./src/presentation/workout/WorkoutPlanScreen";
 import WorkoutDetailScreen from "./src/presentation/workout/WorkoutDetailScreen";
 import WorkoutAdjustmentsScreen from "./src/presentation/workout/WorkoutAdjustmentsScreen";
 import WorkoutExecutionScreen from "./src/presentation/workout/WorkoutExecutionScreen";
+import WorkoutSummaryScreen from "./src/presentation/workout/WorkoutSummaryScreen";
+import WorkoutDetailsScreen from "./src/presentation/workout/WorkoutDetailsScreen";
+import QuickWorkoutScreen from "./src/presentation/workout/QuickWorkoutScreen";
 import { TabIcon, bottomTabBarStyles } from "./src/presentation/components/layout/BottomTabBar";
 import { appHeaderOptions } from "./src/presentation/styles/appStyles";
 import { useAppFonts } from "./src/presentation/styles/fonts";
@@ -54,8 +58,9 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator 
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator 
         initialRouteName="Login"
         screenOptions={{
           gestureEnabled: false, // Desabilita gestos de voltar
@@ -120,7 +125,29 @@ export default function App() {
             headerShown: false,
           }} 
         />
+        <Stack.Screen 
+          name="WorkoutSummary" 
+          component={WorkoutSummaryScreen} 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="WorkoutDetails" 
+          component={WorkoutDetailsScreen} 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="QuickWorkout" 
+          component={QuickWorkoutScreen} 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
       </Stack.Navigator>
     </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

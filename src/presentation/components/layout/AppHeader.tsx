@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, Image, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { headerStyles } from '../../styles/headerStyles';
 
 interface AppHeaderProps {
@@ -8,9 +9,9 @@ interface AppHeaderProps {
 }
 
 // Ícone memoizado para evitar re-renders desnecessários
-const SettingsIcon = memo(() => (
+const LogoutIcon = memo(() => (
   <Image 
-    source={require('../../../../assets/icons/Settings.png')} 
+    source={require('../../../../assets/logout.png')} 
     style={headerStyles.iconImage}
     resizeMode="contain"
   />
@@ -18,10 +19,12 @@ const SettingsIcon = memo(() => (
 
 export const AppHeader = memo(({ 
   title = "WEIGHT", 
-  onSettingsPress 
+  onSettingsPress
 }: AppHeaderProps) => {
+  const insets = useSafeAreaInsets();
+  
   return (
-    <SafeAreaView style={headerStyles.safeArea}>
+    <View style={[headerStyles.safeArea, { paddingTop: insets.top }]}>
       <View style={headerStyles.container}>
         {/* Main Header */}
         <View style={headerStyles.headerBar}>
@@ -30,18 +33,18 @@ export const AppHeader = memo(({
           <Text style={headerStyles.headerTitle}>{title}</Text>
           
           <TouchableOpacity 
-            style={headerStyles.iconButton} 
+            style={headerStyles.iconButtonRight} 
             onPress={onSettingsPress}
             activeOpacity={0.7}
           >
-            <SettingsIcon />
+            <LogoutIcon />
           </TouchableOpacity>
         </View>
         
         {/* Separator Line */}
         <View style={headerStyles.separator} />
       </View>
-    </SafeAreaView>
+    </View>
   );
 });
 

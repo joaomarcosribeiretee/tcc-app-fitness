@@ -5,6 +5,7 @@ import { RegisterUseCase } from "../domain/usecases/RegisterUseCase";
 const authRepo = new InMemoryAuthRepository();
 
 export const container = {
+  authRepository: authRepo,
   loginUseCase: new LoginUseCase(authRepo),
   registerUseCase: new RegisterUseCase(authRepo),
 };

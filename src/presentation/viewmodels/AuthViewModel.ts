@@ -1,5 +1,9 @@
 import { container } from "../../di/container";
 import * as secure from "../../infra/secureStore";
+import UserService from "../../infra/userService";
+import { InMemoryAuthRepository } from "../../domain/repositories/InMemoryAuthRepository";
+
+const authRepo = new InMemoryAuthRepository();
 
 type ValidationErrors = {
   nome?: string;
@@ -94,6 +98,11 @@ export class AuthViewModel {
     try {
       const { token } = await container.loginUseCase.exec(email, senha);
       await secure.setItem('auth_token', token);
+      
+      // Obter dados do usuário após login
+      const userData = await authRepo.me(token);
+      await UserService.saveUserData(userData);
+      
       this.set({ loading: false, token });
       return true;
     } catch (e:any) {
@@ -124,6 +133,9 @@ export class AuthViewModel {
       hasErrors = true;
     } else if (username.trim().length < 3) {
       this.setError('username', 'Nome de usuário deve ter no mínimo 3 caracteres');
+      hasErrors = true;
+    } else if (username.trim().length > 10) {
+      this.setError('username', 'Nome de usuário deve ter no máximo 10 caracteres');
       hasErrors = true;
     } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       this.setError('username', 'Use apenas letras, números e underscore');
@@ -167,6 +179,11 @@ export class AuthViewModel {
     try {
       const { token } = await container.registerUseCase.exec(nome, username, email, senha);
       await secure.setItem('auth_token', token);
+      
+      // Obter dados do usuário após registro
+      const userData = await authRepo.me(token);
+      await UserService.saveUserData(userData);
+      
       this.set({ loading: false, token });
       return true;
     } catch (e:any) {
@@ -177,6 +194,7 @@ export class AuthViewModel {
   }
 
   async logout() {
+    await UserService.clearUserData();
     await secure.deleteItem('auth_token');
     this.set({ token: undefined });
   }

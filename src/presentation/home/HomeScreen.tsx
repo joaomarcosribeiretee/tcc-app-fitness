@@ -77,7 +77,7 @@ const HomeScreen = ({ navigation }: any) => {
         {/* Botão Treino Rápido */}
         <TouchableOpacity 
           style={homeStyles.quickWorkoutButton}
-          onPress={() => navigation.navigate('IntelligentWorkout')}
+          onPress={() => navigation.navigate('QuickWorkout')}
         >
           <Text style={homeStyles.quickWorkoutText}>TREINO RÁPIDO</Text>
         </TouchableOpacity>

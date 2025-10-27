@@ -111,15 +111,16 @@ export const workoutDetailStyles = StyleSheet.create({
     color: colors.accent,
   },
   exerciseNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 4,
   },
   exerciseNumberText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
     color: colors.buttonText,
   },
@@ -191,6 +192,165 @@ export const workoutDetailStyles = StyleSheet.create({
     fontSize: 14,
     color: colors.accent,
     textAlign: 'center',
+  },
+
+  // Estilos para tela de detalhes do treino histórico
+  workoutHeader: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 16,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  workoutTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 8,
+  },
+  workoutDate: {
+    fontSize: 14,
+    color: colors.secondary,
+    marginBottom: 12,
+  },
+  workoutNotes: {
+    fontSize: 16,
+    color: colors.secondary,
+    fontStyle: 'italic',
+    lineHeight: 22,
+  },
+
+  // Estatísticas do treino
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginTop: 20,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: colors.secondary,
+    textAlign: 'center',
+  },
+
+  // Seções
+  section: {
+    marginHorizontal: 16,
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: colors.secondary,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+
+  // Grupos musculares
+  muscleGroupsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  muscleGroupTag: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  muscleGroupText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.primary,
+  },
+
+  // Exercícios
+  exerciseCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  exerciseHeader: {
+    marginBottom: 12,
+  },
+  exerciseName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  exerciseBodyPart: {
+    fontSize: 14,
+    color: colors.secondary,
+  },
+  exerciseStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  exerciseStat: {
+    alignItems: 'center',
+  },
+  exerciseStatValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 2,
+    textAlign: 'center',
+    maxWidth: 60,
+    numberOfLines: 1,
+    ellipsizeMode: 'tail',
+  },
+  exerciseStatLabel: {
+    fontSize: 12,
+    color: colors.secondary,
+  },
+
+  // Botões
+  buttonContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    backgroundColor: '#151F2B', // Mesma cor do header
+    borderTopWidth: 1,
+    borderTopColor: '#787F84', // Traço azul como no header
+  },
+  backButton: {
+    backgroundColor: '#151F2B', // Mesma cor do header
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#787F84', // Cor azul do header
+    alignItems: 'center',
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#787F84', // Cor azul do header
   },
 });
 

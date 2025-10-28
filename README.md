@@ -39,7 +39,7 @@ npm start
 - **Clean Architecture + MVVM**
 
 ### ⏳ Backend (A Implementar)
-- **APIs REST** (Node.js + Express)
+- **APIs REST** (Python + FastAPI/Flask)
 - **Banco de dados** (PostgreSQL)
 - **Integração com IA** (OpenAI/Claude)
 - **Autenticação JWT** real

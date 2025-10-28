@@ -4,7 +4,7 @@
 
 **Projeto:** App de fitness com IA para geração de treinos personalizados  
 **Frontend:** React Native + Expo (✅ 100% implementado)  
-**Backend:** Node.js + Express + PostgreSQL + IA (⏳ a implementar)  
+**Backend:** Python + FastAPI/Flask + PostgreSQL + IA (⏳ a implementar)  
 **Status:** Frontend completo com simulação de backend, aguardando integração real
 
 ---
@@ -562,19 +562,20 @@ Retorne JSON com estrutura WorkoutPlan.
 ## 🚀 Próximos Passos
 
 ### **1. Configuração Inicial (1-2 dias)**
-- [ ] Configurar servidor Node.js + Express
-- [ ] Configurar PostgreSQL
-- [ ] Implementar autenticação JWT
-- [ ] Configurar CORS e middleware
+- [ ] Configurar ambiente Python (venv)
+- [ ] Criar servidor Python (FastAPI ou Flask)
+- [ ] Configurar PostgreSQL com SQLAlchemy
+- [ ] Implementar autenticação JWT (python-jose)
+- [ ] Configurar CORS e middlewares
 
 ### **2. APIs Básicas (2-3 dias)**
-- [ ] Implementar CRUD de usuários
+- [ ] Implementar CRUD de usuários (SQLAlchemy)
 - [ ] Implementar CRUD de planos de treino
-- [ ] Implementar validação de dados
+- [ ] Implementar validação de dados (Pydantic models)
 - [ ] Implementar tratamento de erros
 
 ### **3. Integração com IA (2-3 dias)**
-- [ ] Configurar OpenAI/Claude
+- [ ] Configurar OpenAI/Claude (Python SDK)
 - [ ] Implementar geração de treinos
 - [ ] Implementar sistema de alterações
 - [ ] Implementar fallbacks para erros
@@ -605,7 +606,7 @@ Retorne JSON com estrutura WorkoutPlan.
 
 ### **Tecnologias**
 - **Frontend:** React Native + Expo
-- **Backend:** Node.js + Express
+- **Backend:** Python + FastAPI/Flask
 - **Banco:** PostgreSQL
 - **IA:** OpenAI GPT-4 ou Claude
 - **Arquitetura:** Clean Architecture + MVVM
@@ -636,9 +637,9 @@ Retorne JSON com estrutura WorkoutPlan.
 ## ✅ Checklist de Implementação
 
 ### **Backend Básico**
-- [ ] Servidor Express configurado
-- [ ] PostgreSQL configurado
-- [ ] Autenticação JWT implementada
+- [ ] Servidor Python (FastAPI/Flask) configurado
+- [ ] PostgreSQL com SQLAlchemy configurado
+- [ ] Autenticação JWT (python-jose) implementada
 - [ ] CRUD de usuários implementado
 - [ ] CRUD de planos implementado
 
@@ -714,7 +715,7 @@ Retorne JSON com estrutura WorkoutPlan.
 ### **O Que Você Precisa Fazer (Backend)**
 
 #### **Setup Básico**
-- ⏳ Criar servidor Node.js + Express
+- ⏳ Criar servidor Python (FastAPI ou Flask)
 - ⏳ Configurar PostgreSQL
 - ⏳ Implementar autenticação JWT
 - ⏳ Configurar CORS, middlewares e validações
@@ -773,12 +774,42 @@ src/presentation/workout/
   - WorkoutPlanScreen.tsx         ← Tela que exibe o plano gerado
 ```
 
+### **Tecnologias Recomendadas para Backend Python**
+- **Framework:** FastAPI (recomendado) ou Flask
+- **Banco de Dados:** PostgreSQL
+- **ORM:** SQLAlchemy
+- **Autenticação:** python-jose (JWT)
+- **IA:** openai-python ou anthropic SDK
+- **Validação:** Pydantic
+- **Requests HTTP:** httpx ou requests
+
+### **Frontend - Requisições HTTP**
+O frontend atual **NÃO tem bibliotecas HTTP** instaladas (axios, fetch, etc).
+
+**Quando o backend estiver pronto, você pode:**
+
+1. **Usar fetch nativo do React Native** (recomendado - já vem instalado):
+```typescript
+const response = await fetch('http://localhost:3000/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email, password })
+});
+```
+
+2. **OU instalar axios**:
+```bash
+npm install axios
+```
+
+**O frontend atualmente usa mocks locais e funcionará perfeitamente assim que você implementar as APIs em Python.**
+
 ### **Próximos Passos**
 1. ✅ Leia este README_BACKEND.md
 2. ✅ Leia BACKEND_INTEGRATION_GUIDE.md (detalhes das APIs)
 3. ✅ Leia API_EXAMPLES.md (exemplos práticos)
-4. ✅ Leia ENVIRONMENT_SETUP.md (configuração)
-5. ✅ Implemente as APIs
+4. ✅ Configure ambiente Python (venv, pip install)
+5. ✅ Implemente as APIs em Python
 6. ✅ Teste com Postman/Insomnia
 7. ✅ Integre com frontend
 8. ✅ Testes finais

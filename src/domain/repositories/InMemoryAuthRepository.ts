@@ -1,4 +1,4 @@
-import { AuthRepository } from "../../domain/repositories/AuthRepository";
+import { AuthRepository } from "../entities/AuthRepository";
 
 const users = new Map<string, { id: string; nome: string; username: string; email: string; senhaHash: string }>();
 

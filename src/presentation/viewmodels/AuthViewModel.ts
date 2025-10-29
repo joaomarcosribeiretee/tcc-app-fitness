@@ -25,13 +25,35 @@ export class AuthViewModel {
     this.set({ loading: true, errors: {} });
     try {
       const token = await secure.getItem('auth_token');
-      if (token) {
+      if (token && this.isTokenValid(token)) {
+        // Token válido, usuário logado
         this.set({ loading: false, token });
       } else {
+        // Token inválido ou expirado, limpar
+        if (token) {
+          await secure.deleteItem('auth_token');
+        }
         this.set({ loading: false });
       }
     } catch (e:any) {
       this.set({ loading: false });
+    }
+  }
+
+  private isTokenValid(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const exp = payload.exp;
+      
+      if (!exp) return false;
+      
+      // Converter exp (timestamp) para milissegundos e comparar
+      const expirationTime = exp * 1000;
+      const now = Date.now();
+      
+      return expirationTime > now;
+    } catch (error) {
+      return false;
     }
   }
 
@@ -174,14 +196,10 @@ export class AuthViewModel {
     }
 
     try {
-      const { token } = await container.registerUseCase.exec(nome, username, email, senha);
-      await secure.setItem('auth_token', token);
+      // APENAS cadastrar - NÃO fazer login automático
+      await container.registerUseCase.exec(nome, username, email, senha);
       
-      // Obter dados do usuário após registro
-      const userData = await container.authRepository.me(token);
-      await UserService.saveUserData(userData);
-      
-      this.set({ loading: false, token });
+      this.set({ loading: false });
       return true;
     } catch (e:any) {
       this.setError('geral', e.message ?? "Erro ao cadastrar");

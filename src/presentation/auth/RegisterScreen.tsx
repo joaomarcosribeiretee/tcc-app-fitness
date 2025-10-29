@@ -2,6 +2,7 @@ import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { View, Text, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { AuthViewModel } from "../viewmodels/AuthViewModel";
 import { ValidatedInput } from "../components/ui/ValidatedInput";
+import SuccessModal from "../components/ui/SuccessModal";
 import { authStyles } from "../styles/authStyles";
 import { colors } from "../styles/colors";
 
@@ -12,6 +13,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [vmState, setVmState] = useState({ loading: false, errors: {} } as any);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   const vm = useMemo(() => new AuthViewModel(setVmState), []);
 
@@ -27,13 +29,19 @@ export default function RegisterScreen({ navigation }: any) {
   const handleRegister = useCallback(async () => {
     const ok = await vm.register(nome, username, email, senha, confirmarSenha);
     if (ok) {
-      // Reseta a pilha de navegação para Main, sem possibilidade de voltar
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
+      // Mostrar modal de sucesso
+      setShowSuccessModal(true);
     }
-  }, [vm, nome, username, email, senha, confirmarSenha, navigation]);
+  }, [vm, nome, username, email, senha, confirmarSenha]);
+
+  const handleSuccessModalClose = useCallback(() => {
+    setShowSuccessModal(false);
+    // Redirecionar para Login após fechar modal
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  }, [navigation]);
 
   return (
     <KeyboardAvoidingView style={authStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -107,6 +115,15 @@ export default function RegisterScreen({ navigation }: any) {
               <Text style={authStyles.loginLink}>Faça login</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Modal de Sucesso */}
+          <SuccessModal
+            visible={showSuccessModal}
+            title="Conta criada com sucesso!"
+            message="Seu cadastro foi realizado. Faça login para continuar."
+            buttonText="Ir para login"
+            onClose={handleSuccessModalClose}
+          />
         </View>
     </KeyboardAvoidingView>
   );

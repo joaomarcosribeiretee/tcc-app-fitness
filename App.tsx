@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -20,6 +20,7 @@ import QuickWorkoutScreen from "./src/presentation/workout/QuickWorkoutScreen";
 import { TabIcon, bottomTabBarStyles } from "./src/presentation/components/layout/BottomTabBar";
 import { appHeaderOptions } from "./src/presentation/styles/appStyles";
 import { useAppFonts } from "./src/presentation/styles/fonts";
+import * as secure from "./src/infra/secureStore";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -46,10 +47,54 @@ function MainTabs() {
   );
 }
 
+// Função para verificar se token é válido
+const isTokenValid = (token: string): boolean => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const exp = payload.exp;
+    
+    if (!exp) return false;
+    
+    const expirationTime = exp * 1000;
+    const now = Date.now();
+    
+    return expirationTime > now;
+  } catch (error) {
+    return false;
+  }
+};
+
 export default function App() {
   const fontsLoaded = useAppFonts();
+  const [isChecking, setIsChecking] = useState(true);
+  const [initialRoute, setInitialRoute] = useState<string>('Login');
 
-  if (!fontsLoaded) {
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = await secure.getItem('auth_token');
+        if (token && isTokenValid(token)) {
+          setInitialRoute('Main');
+        } else {
+          // Token inválido ou expirado
+          if (token) {
+            await secure.deleteItem('auth_token');
+          }
+          setInitialRoute('Login');
+        }
+      } catch (error) {
+        setInitialRoute('Login');
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    if (fontsLoaded) {
+      checkAuth();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded || isChecking) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -61,7 +106,7 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator 
-        initialRouteName="Login"
+        initialRouteName={initialRoute}
         screenOptions={{
           gestureEnabled: false, // Desabilita gestos de voltar
         }}
@@ -127,14 +172,14 @@ export default function App() {
         />
         <Stack.Screen 
           name="WorkoutSummary" 
-          component={WorkoutSummaryScreen} 
+          component={WorkoutSummaryScreen as any} 
           options={{ 
             headerShown: false,
           }} 
         />
         <Stack.Screen 
           name="WorkoutDetails" 
-          component={WorkoutDetailsScreen} 
+          component={WorkoutDetailsScreen as any} 
           options={{ 
             headerShown: false,
           }} 

@@ -7,6 +7,7 @@ import { mockWorkouts } from '../../data/mockWorkouts';
 import { RoutineType, Exercise } from '../../domain/entities/Workout';
 import { loadWorkoutPlans } from '../../infra/workoutPlanStorage';
 import { WorkoutPlanDay } from '../../domain/entities/WorkoutPlan';
+import { deleteItem } from '../../infra/secureStore';
 
 interface WorkoutDetailScreenProps {
   navigation: any;
@@ -120,7 +121,6 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
 
   const handleLogout = async () => {
     try {
-      const { deleteItem } = await import('../../infra/secureStore');
       await deleteItem('auth_token');
       console.log('Token removido do SecureStore');
       setShowLogoutModal(false);

@@ -3,17 +3,23 @@ import { WorkoutPlan } from '../domain/entities/WorkoutPlan';
 
 /**
  * Extrai o userId do token
- * Token format: "mock.{userId}"
+ * Token format: "mock.{userId}" ou JWT
  */
 async function getCurrentUserId(): Promise<string | null> {
   try {
     const token = await secure.getItem('auth_token');
     if (!token) return null;
     
-    // Extrai o userId do token (formato: "mock.{userId}")
-    const parts = token.split('.');
-    if (parts.length >= 2) {
-      return parts[1]; // Retorna o userId
+    // Se for JWT, tentar decodificar
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return String(payload.sub?.id || '');
+    } catch {
+      // Se não for JWT, tentar formato antigo "mock.{userId}"
+      const parts = token.split('.');
+      if (parts.length >= 2) {
+        return parts[1];
+      }
     }
     return null;
   } catch (error) {
@@ -145,4 +151,3 @@ export async function clearWorkoutPlans(): Promise<void> {
     throw error;
   }
 }
-

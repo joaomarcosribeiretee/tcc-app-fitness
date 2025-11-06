@@ -10,7 +10,10 @@ import HomeScreen from "./src/presentation/home/HomeScreen";
 import DietScreen from "./src/presentation/diet/DietScreen";
 import ProfileScreen from "./src/presentation/profile/ProfileScreen";
 import IntelligentWorkoutScreen from "./src/presentation/workout/IntelligentWorkoutScreen";
+import IntelligentDietScreen from "./src/presentation/diet/IntelligentDietScreen";
 import WorkoutPlanScreen from "./src/presentation/workout/WorkoutPlanScreen";
+import DietPlanScreen from "./src/presentation/diet/DietPlanScreen";
+import DietAdjustmentsScreen from "./src/presentation/diet/DietAdjustmentsScreen";
 import WorkoutDetailScreen from "./src/presentation/workout/WorkoutDetailScreen";
 import WorkoutAdjustmentsScreen from "./src/presentation/workout/WorkoutAdjustmentsScreen";
 import WorkoutExecutionScreen from "./src/presentation/workout/WorkoutExecutionScreen";
@@ -138,6 +141,27 @@ export default function App() {
         <Stack.Screen 
           name="IntelligentWorkout" 
           component={IntelligentWorkoutScreen} 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="IntelligentDiet" 
+          component={IntelligentDietScreen} 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="DietPlan" 
+          component={DietPlanScreen} 
+          options={{ 
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
+          name="DietAdjustments" 
+          component={DietAdjustmentsScreen} 
           options={{ 
             headerShown: false,
           }} 

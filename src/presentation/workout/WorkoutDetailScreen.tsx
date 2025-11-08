@@ -110,17 +110,19 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
         const userId = await userService.getCurrentUserId();
         const numericUserId = userId ? Number(userId) : null;
 
-        if (!resolvedDay && planId && dayId && numericUserId != null) {
+        const shouldFetchRemote = fromHome && planId && dayId && numericUserId != null;
+
+        if (shouldFetchRemote && !resolvedDay) {
           console.log('🔍 Buscando treino do backend...');
-          const remoteDays = await fetchProgramWorkouts(numericUserId, planId);
+          const remoteDays = await fetchProgramWorkouts(numericUserId!, planId!);
           resolvedDay = remoteDays.find((day) => String(day.id) === String(dayId)) ?? null;
           resolvedExercises = resolvedDay?.exercises ?? [];
           console.log('Dia encontrado no backend:', resolvedDay ? 'Sim' : 'Não');
         }
 
-        if (resolvedDay && (!resolvedDay.exercises || resolvedDay.exercises.length === 0) && numericUserId != null) {
+        if (shouldFetchRemote && resolvedDay && (!resolvedDay.exercises || resolvedDay.exercises.length === 0)) {
           console.log('ℹ️ Dia sem exercícios locais, consultando detalhes do backend');
-          const exercisesFromBackend = await fetchWorkoutExercises(numericUserId, resolvedDay.id);
+          const exercisesFromBackend = await fetchWorkoutExercises(numericUserId!, resolvedDay.id);
           resolvedExercises = exercisesFromBackend;
           resolvedDay = { ...resolvedDay, exercises: exercisesFromBackend };
           console.log('✅ Exercícios carregados do backend:', exercisesFromBackend.map(ex => ({ name: ex.name, sets: ex.sets })));
@@ -150,7 +152,7 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
               setWorkoutDay(null);
               setExercises([]);
             }
-          } else {
+          } else if (shouldFetchRemote) {
             setWorkoutDay(null);
             setExercises([]);
           }
@@ -178,7 +180,7 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
               setWorkoutDay(null);
               setExercises([]);
             }
-          } else {
+          } else if (fromHome) {
             setWorkoutDay(null);
             setExercises([]);
           }

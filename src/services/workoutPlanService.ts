@@ -80,6 +80,7 @@ interface BackendTreinoExercise {
   equipamento: string | null;
   descanso: number | null;
   series: number | null;
+  reps: number | null;
 }
 
 interface BackendExercisesResponse {
@@ -312,6 +313,7 @@ function mapBackendExerciseDetails(exercicios: BackendTreinoExercise[] | undefin
     target: item.grupo_muscular || 'Personalizado',
     equipment: item.equipamento || 'Corpo Livre',
     sets: item.series != null ? Number(item.series) : undefined,
+    reps: item.reps != null ? String(item.reps) : undefined,
     rest: item.descanso != null ? `${item.descanso}s` : undefined,
   }));
 }

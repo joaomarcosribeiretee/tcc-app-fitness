@@ -7,6 +7,9 @@ export interface WorkoutPlanDay {
   name: string;
   exercises: Exercise[]; // Cada dia tem seus exercícios específicos
   completed?: boolean;
+  description?: string | null;
+  duration?: number | null;
+  difficulty?: string | null;
 }
 
 export interface WorkoutPlan {

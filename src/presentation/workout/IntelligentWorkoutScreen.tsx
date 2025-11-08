@@ -17,6 +17,8 @@ import RejectModal from '../components/ui/RejectModal';
 import LoadingModal from '../components/ui/LoadingModal';
 import { intelligentWorkoutStyles } from '../styles/intelligentWorkoutStyles';
 import * as secure from '../../infra/secureStore';
+import userService from '../../infra/userService';
+import { generateWorkoutPlanFromIA, AnamnesePayload } from '../../services/workoutPlanService';
 
 // Habilitar animações de layout no Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -37,7 +39,6 @@ interface FormData {
   lesoes: string;
   condicoesMedicas: string;
   exerciciosNaoGosta: string;
-  equipamentos: string[];
   equipamentosExtras: string;
 }
 
@@ -63,7 +64,6 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
     lesoes: '',
     condicoesMedicas: '',
     exerciciosNaoGosta: '',
-    equipamentos: [],
     equipamentosExtras: ''
   });
 
@@ -179,63 +179,47 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
     'Aumentar força',
     'Melhorar flexibilidade'
   ], []);
-  const equipamentosOptions = useMemo(() => [
-    'Apenas peso corporal',
-    'Halteres',
-    'Barras e anilhas',
-    'Barra fixa',
-    'Paralelas',
-    'Smith Machine',
-    'Supino reto',
-    'Supino inclinado',
-    'Supino declinado',
-    'Peck Deck',
-    'Crucifixo',
-    'Puxada frontal',
-    'Remada baixa',
-    'Remada cavalinho',
-    'Remada curvada',
-    'Pulley alto',
-    'Pulley baixo',
-    'Cross over',
-    'Leg Press 45°',
-    'Hack Squat',
-    'Agachamento livre',
-    'Cadeira extensora',
-    'Cadeira flexora',
-    'Mesa flexora',
-    'Cadeira adutora',
-    'Cadeira abdutora',
-    'Panturrilha em pé',
-    'Panturrilha sentado',
-    'Elevação pélvica',
-    'Kettlebell',
-    'Elásticos/bandas de resistência',
-    'Esteira',
-    'Bicicleta ergométrica',
-    'Elíptico',
-    'Transport',
-    'Corda de pular',
-    'Medicine ball',
-    'Bola suíça',
-    'Bosu'
-  ], []);
 
-  const handleSubmit = useCallback(() => {
+  const buildPayload = useCallback(async (): Promise<AnamnesePayload> => {
+    const userId = await userService.getCurrentUserId();
+    if (!userId) {
+      throw new Error('Não foi possível identificar o usuário logado. Faça login novamente.');
+    }
+
+    const objetivosExtras = formData.objetivosEspecificos?.trim();
+    const equipamentosExtras = formData.equipamentosExtras?.trim();
+
+    return {
+      usuario_id: Number(userId),
+      idade: Number(formData.idade) || 0,
+      sexo: formData.sexo || 'não informado',
+      peso: Number(formData.peso) || 0,
+      experiencia: formData.experiencia || 'iniciante',
+      tempo_treino: formData.tempoTreino || 'não informado',
+      dias_semana: formData.diasSemana || 'não informado',
+      tempo_treino_por_dia: formData.tempoPorTreino || 'não informado',
+      objetivos: formData.objetivos,
+      objetivo_especifico: objetivosExtras || 'personalizado',
+      lesao: formData.lesoes || 'nenhuma',
+      condicao_medica: formData.condicoesMedicas || 'nenhuma',
+      exercicio_nao_gosta: formData.exerciciosNaoGosta || 'nenhum',
+      equipamentos: equipamentosExtras || undefined,
+    };
+  }, [formData]);
+
+  const handleSubmit = useCallback(async () => {
     setIsLoading(true);
-    
-    // Simular carregamento (futuramente será a requisição para IA)
-    setTimeout(() => {
+    try {
+      const payload = await buildPayload();
+      const { workoutPlan } = await generateWorkoutPlanFromIA(payload);
       setIsLoading(false);
-      
-      // Importar e gerar plano mock (futuramente será retornado pela IA)
-      const { generateMockWorkoutPlan } = require('../../domain/entities/WorkoutPlan');
-      const workoutPlan = generateMockWorkoutPlan();
-      
-      // Navegar para tela de plano de treino
       navigation.navigate('WorkoutPlan', { workoutPlan });
-    }, 2000); 
-  }, [navigation]);
+    } catch (error) {
+      setIsLoading(false);
+      const message = error instanceof Error ? error.message : 'Erro desconhecido ao gerar treino';
+      Alert.alert('Erro ao gerar treino', message);
+    }
+  }, [buildPayload, navigation]);
 
   const handleCancel = useCallback(() => {
     navigation.goBack();
@@ -582,23 +566,13 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
         {/* Equipamentos Disponíveis */}
         <View style={intelligentWorkoutStyles.section}>
           <Text style={intelligentWorkoutStyles.sectionTitle}>Equipamentos Disponíveis</Text>
-          
-          <Text style={intelligentWorkoutStyles.questionLabel}>
-            Quais equipamentos você tem acesso para treinar? (Selecione os que você tem disponíveis)
-          </Text>
-          <Selector
-            field="equipamentos"
-            options={equipamentosOptions}
-            multiple={true}
-            placeholder="Selecione os equipamentos"
-          />
 
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Equipamentos específicos da sua academia (opcional)
+            Liste os equipamentos que você tem disponíveis (opcional)
           </Text>
           <TextInput
             style={intelligentWorkoutStyles.textArea}
-            placeholder="Ex: Agachamento Pêndulo, Peck Deck, Remada T-Bar, Máquina Glúteo, etc."
+            placeholder="Ex: Halteres, barra fixa, máquina de cabo..."
             placeholderTextColor="#999999"
             value={formData.equipamentosExtras}
             onChangeText={(value) => handleInputChange('equipamentosExtras', value)}

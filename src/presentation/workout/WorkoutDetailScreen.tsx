@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { AppHeader } from '../components/layout/AppHeader';
 import RejectModal from '../components/ui/RejectModal';
 import { workoutDetailStyles } from '../styles/workoutDetailStyles';
 import { mockWorkouts } from '../../data/mockWorkouts';
 import { RoutineType, Exercise } from '../../domain/entities/Workout';
-import { loadWorkoutPlans } from '../../infra/workoutPlanStorage';
-import { WorkoutPlanDay } from '../../domain/entities/WorkoutPlan';
+import { WorkoutPlan, WorkoutPlanDay } from '../../domain/entities/WorkoutPlan';
 import { deleteItem } from '../../infra/secureStore';
+import userService from '../../infra/userService';
+import { fetchProgramWorkouts, fetchWorkoutExercises } from '../../services/workoutPlanService';
 
 interface WorkoutDetailScreenProps {
   navigation: any;
@@ -18,10 +19,47 @@ interface WorkoutDetailScreenProps {
       planId?: string;
       fromHome?: boolean;
       dayId?: string; // ID do dia específico no plano
-      workoutPlan?: any; // Plano atual (ainda não salvo)
+      workoutPlan?: WorkoutPlan; // Plano atual (ainda não salvo)
     };
   };
 }
+
+const normalizeText = (value?: string | null): string | null => {
+  if (!value) return null;
+
+  const normalized = value.trim().toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (normalized.includes('iniciante')) return 'Iniciante';
+  if (normalized.includes('intermediario') || normalized.includes('intermediário')) return 'Intermediário';
+  if (normalized.includes('avancado') || normalized.includes('avançado')) return 'Avançado';
+
+  if (normalized.startsWith('upper')) return 'Upper Body';
+  if (normalized.startsWith('lower')) return 'Lower Body';
+  if (normalized.startsWith('push')) return 'Push Day';
+  if (normalized.startsWith('pull')) return 'Pull Day';
+  if (normalized.startsWith('legs') || normalized.startsWith('perna')) return 'Leg Day';
+  if (normalized.startsWith('fullbody')) return 'Full Body';
+
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const formatDifficulty = (value?: string | null, fallback?: string | null): string => {
+  const normalized = normalizeText(value);
+  if (normalized) return normalized;
+
+  const fallbackNormalized = normalizeText(fallback);
+  if (fallbackNormalized) return fallbackNormalized;
+
+  return 'Personalizado';
+};
 
 const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) => {
   const routineType: RoutineType = route.params?.routineType || 'upper';
@@ -38,68 +76,165 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
 
   // Carregar os exercícios do dia específico do plano
   useEffect(() => {
+    let isMounted = true;
+
     const loadWorkoutDay = async () => {
       console.log('=== WorkoutDetailScreen Debug ===');
       console.log('planId:', planId, 'dayId:', dayId, 'routineType:', routineType);
       console.log('workoutPlan:', workoutPlan ? 'Presente' : 'Ausente');
-      
+
+      setLoading(true);
+
       try {
-        // PRIORIDADE 1: Usar plano atual (ainda não salvo) se disponível
-        if (workoutPlan && dayId) {
-          console.log('✅ Usando plano atual (ainda não salvo)');
-          const day = workoutPlan.days.find(d => d.id === dayId);
-          if (day) {
-            setWorkoutDay(day);
-            setExercises(day.exercises);
-            console.log('✅ Exercícios carregados do plano atual:', day.exercises.map(ex => ({ name: ex.name, sets: ex.sets })));
-          } else {
-            console.log('❌ Dia não encontrado no plano atual');
-          }
-        }
-        // PRIORIDADE 2: Buscar do plano salvo
-        else if (planId && dayId) {
-          console.log('🔍 Buscando do plano salvo...');
-          const plans = await loadWorkoutPlans();
-          console.log('Planos encontrados:', plans.length);
-          const plan = plans.find(p => p.id === planId);
-          console.log('Plano encontrado:', plan ? 'Sim' : 'Não');
-          
-          if (plan) {
-            const day = plan.days.find(d => d.id === dayId);
-            console.log('Dia encontrado:', day ? 'Sim' : 'Não');
-            if (day) {
-              setWorkoutDay(day);
-              setExercises(day.exercises);
-              console.log('✅ Exercícios carregados do plano salvo:', day.exercises.map(ex => ({ name: ex.name, sets: ex.sets })));
+        let resolvedDay: WorkoutPlanDay | null = null;
+        let resolvedExercises: Exercise[] = [];
+
+        if (workoutPlan?.days?.length) {
+          const localDay = workoutPlan.days.find((day) => {
+            if (dayId) {
+              return String(day.id) === String(dayId);
             }
+            if (dayName) {
+              return day.name === dayName;
+            }
+            return false;
+          });
+
+          if (localDay) {
+            console.log('📄 Usando plano recebido por parâmetro');
+            resolvedDay = localDay;
+            resolvedExercises = localDay.exercises ?? [];
           }
         }
-        // PRIORIDADE 3: Fallback para mockWorkouts
-        else {
-          console.log('🔄 Usando fallback para mockWorkouts');
-          const mockWorkout = mockWorkouts[routineType];
-          if (mockWorkout) {
-            setExercises(mockWorkout.exercises);
-            console.log('✅ Exercícios carregados do mock:', mockWorkout.exercises.map(ex => ({ name: ex.name, sets: ex.sets })));
+
+        const userId = await userService.getCurrentUserId();
+        const numericUserId = userId ? Number(userId) : null;
+
+        if (!resolvedDay && planId && dayId && numericUserId != null) {
+          console.log('🔍 Buscando treino do backend...');
+          const remoteDays = await fetchProgramWorkouts(numericUserId, planId);
+          resolvedDay = remoteDays.find((day) => String(day.id) === String(dayId)) ?? null;
+          resolvedExercises = resolvedDay?.exercises ?? [];
+          console.log('Dia encontrado no backend:', resolvedDay ? 'Sim' : 'Não');
+        }
+
+        if (resolvedDay && (!resolvedDay.exercises || resolvedDay.exercises.length === 0) && numericUserId != null) {
+          console.log('ℹ️ Dia sem exercícios locais, consultando detalhes do backend');
+          const exercisesFromBackend = await fetchWorkoutExercises(numericUserId, resolvedDay.id);
+          resolvedExercises = exercisesFromBackend;
+          resolvedDay = { ...resolvedDay, exercises: exercisesFromBackend };
+          console.log('✅ Exercícios carregados do backend:', exercisesFromBackend.map(ex => ({ name: ex.name, sets: ex.sets })));
+        }
+
+        if (isMounted) {
+          if (resolvedDay) {
+            setWorkoutDay(resolvedDay);
+            setExercises(resolvedExercises);
+          } else if (!planId) {
+            const fallbackWorkout = mockWorkouts[routineType];
+            if (fallbackWorkout) {
+              const fallbackDay: WorkoutPlanDay = {
+                id: routineType,
+                dayNumber: 1,
+                routineType,
+                name: fallbackWorkout.name,
+                exercises: fallbackWorkout.exercises,
+                completed: false,
+                description: fallbackWorkout.description,
+                duration: null,
+                difficulty: fallbackWorkout.difficulty,
+              };
+              setWorkoutDay(fallbackDay);
+              setExercises(fallbackWorkout.exercises);
+            } else {
+              setWorkoutDay(null);
+              setExercises([]);
+            }
+          } else {
+            setWorkoutDay(null);
+            setExercises([]);
           }
         }
       } catch (error) {
         console.error('❌ Error loading workout day:', error);
-        // Fallback para mockWorkouts em caso de erro
-        const mockWorkout = mockWorkouts[routineType];
-        if (mockWorkout) {
-          setExercises(mockWorkout.exercises);
+        if (isMounted) {
+          if (!planId) {
+            const fallbackWorkout = mockWorkouts[routineType];
+            if (fallbackWorkout) {
+              const fallbackDay: WorkoutPlanDay = {
+                id: routineType,
+                dayNumber: 1,
+                routineType,
+                name: fallbackWorkout.name,
+                exercises: fallbackWorkout.exercises,
+                completed: false,
+                description: fallbackWorkout.description,
+                duration: null,
+                difficulty: fallbackWorkout.difficulty,
+              };
+              setWorkoutDay(fallbackDay);
+              setExercises(fallbackWorkout.exercises);
+            } else {
+              setWorkoutDay(null);
+              setExercises([]);
+            }
+          } else {
+            setWorkoutDay(null);
+            setExercises([]);
+          }
         }
       } finally {
-        setLoading(false);
-        console.log('===============================');
+        if (isMounted) {
+          setLoading(false);
+          console.log('===============================');
+        }
       }
     };
 
     loadWorkoutDay();
-  }, [planId, dayId, routineType, workoutPlan]);
 
-  const workout = mockWorkouts[routineType];
+    return () => {
+      isMounted = false;
+    };
+  }, [planId, dayId, dayName, routineType, workoutPlan]);
+
+  if (loading) {
+    return (
+      <View style={workoutDetailStyles.container}>
+        <AppHeader title="WEIGHT" onSettingsPress={() => setShowLogoutModal(true)} />
+        <View style={workoutDetailStyles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={workoutDetailStyles.loadingText}>Carregando treino...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  const fallbackWorkout = !planId ? mockWorkouts[routineType] : undefined;
+
+  if (!workoutDay && !fallbackWorkout) {
+    return (
+      <View style={workoutDetailStyles.container}>
+        <AppHeader title="WEIGHT" onSettingsPress={() => setShowLogoutModal(true)} />
+        <View style={workoutDetailStyles.emptyState}>
+          <Text style={workoutDetailStyles.emptyText}>Treino não encontrado</Text>
+          <Text style={workoutDetailStyles.emptySubtext}>
+            Selecione um treino válido para visualizar
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  const displayName = workoutDay?.name ?? dayName ?? fallbackWorkout?.name ?? 'Treino';
+  const displayDescription = workoutDay?.description ?? fallbackWorkout?.description ?? '';
+  const displayDifficulty = formatDifficulty(
+    workoutDay?.difficulty,
+    fallbackWorkout?.difficulty ?? workoutDay?.routineType ?? routineType
+  );
+  const displayDuration = workoutDay?.duration != null
+    ? `${workoutDay.duration} min`
+    : fallbackWorkout?.duration ?? '-';
 
   const handleStartWorkout = () => {
     navigation.navigate('WorkoutExecution', {
@@ -138,20 +273,6 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
     }
   };
 
-  if (!workout) {
-    return (
-      <View style={workoutDetailStyles.container}>
-        <AppHeader title="WEIGHT" onSettingsPress={handleSettings} />
-        <View style={workoutDetailStyles.emptyState}>
-          <Text style={workoutDetailStyles.emptyText}>Treino não encontrado</Text>
-          <Text style={workoutDetailStyles.emptySubtext}>
-            Selecione um treino válido para visualizar
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={workoutDetailStyles.container}>
       <AppHeader title="WEIGHT" onSettingsPress={handleSettings} />
@@ -172,13 +293,13 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
           {dayName && (
             <Text style={workoutDetailStyles.dayBadge}>{dayName}</Text>
           )}
-          <Text style={workoutDetailStyles.routineName}>{workout.name}</Text>
-          <Text style={workoutDetailStyles.routineDescription}>{workout.description}</Text>
+          <Text style={workoutDetailStyles.routineName}>{displayName}</Text>
+          <Text style={workoutDetailStyles.routineDescription}>{displayDescription}</Text>
           
           <View style={workoutDetailStyles.routineInfoRow}>
             <View style={workoutDetailStyles.infoItem}>
               <Text style={workoutDetailStyles.infoLabel}>Duração:</Text>
-              <Text style={workoutDetailStyles.infoValue}>{workout.duration}</Text>
+              <Text style={workoutDetailStyles.infoValue}>{displayDuration}</Text>
             </View>
             
             <View style={workoutDetailStyles.infoItem}>
@@ -187,7 +308,7 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
             </View>
             
             <View style={workoutDetailStyles.difficultyBadge}>
-              <Text style={workoutDetailStyles.difficultyText}>{workout.difficulty}</Text>
+              <Text style={workoutDetailStyles.difficultyText}>{displayDifficulty}</Text>
             </View>
           </View>
         </View>
@@ -202,7 +323,7 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
                 <View style={workoutDetailStyles.exerciseInfo}>
                   <Text style={workoutDetailStyles.exerciseName}>{exercise.name}</Text>
                   <Text style={workoutDetailStyles.exerciseTarget}>
-                    {exercise.bodyPart} • {exercise.target}
+                    {exercise.bodyPart}
                   </Text>
                   <Text style={workoutDetailStyles.exerciseEquipment}>
                     {exercise.equipment}

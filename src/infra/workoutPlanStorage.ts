@@ -1,5 +1,6 @@
 import * as secure from './secureStore';
 import { WorkoutPlan } from '../domain/entities/WorkoutPlan';
+import { decodeJwtPayload } from '../utils/jwt';
 
 /**
  * Extrai o userId do token
@@ -10,16 +11,14 @@ async function getCurrentUserId(): Promise<string | null> {
     const token = await secure.getItem('auth_token');
     if (!token) return null;
     
-    // Se for JWT, tentar decodificar
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return String(payload.sub?.id || '');
-    } catch {
-      // Se não for JWT, tentar formato antigo "mock.{userId}"
-      const parts = token.split('.');
-      if (parts.length >= 2) {
-        return parts[1];
-      }
+    const payload = decodeJwtPayload(token);
+    if (payload?.sub?.id) {
+      return String(payload.sub.id);
+    }
+
+    const parts = token.split('.');
+    if (parts.length >= 2) {
+      return parts[1];
     }
     return null;
   } catch (error) {

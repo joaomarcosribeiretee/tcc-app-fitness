@@ -24,6 +24,7 @@ import { TabIcon, bottomTabBarStyles } from "./src/presentation/components/layou
 import { appHeaderOptions } from "./src/presentation/styles/appStyles";
 import { useAppFonts } from "./src/presentation/styles/fonts";
 import * as secure from "./src/infra/secureStore";
+import { isJwtValid } from "./src/utils/jwt";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -50,23 +51,6 @@ function MainTabs() {
   );
 }
 
-// Função para verificar se token é válido
-const isTokenValid = (token: string): boolean => {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const exp = payload.exp;
-    
-    if (!exp) return false;
-    
-    const expirationTime = exp * 1000;
-    const now = Date.now();
-    
-    return expirationTime > now;
-  } catch (error) {
-    return false;
-  }
-};
-
 export default function App() {
   const fontsLoaded = useAppFonts();
   const [isChecking, setIsChecking] = useState(true);
@@ -76,7 +60,7 @@ export default function App() {
     const checkAuth = async () => {
       try {
         const token = await secure.getItem('auth_token');
-        if (token && isTokenValid(token)) {
+        if (token && isJwtValid(token)) {
           setInitialRoute('Main');
         } else {
           // Token inválido ou expirado

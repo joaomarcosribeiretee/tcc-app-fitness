@@ -1,6 +1,7 @@
 import { container } from "../../di/container";
 import * as secure from "../../infra/secureStore";
 import UserService from "../../infra/userService";
+import { isJwtValid, decodeJwtPayload } from "../../utils/jwt";
 
 type ValidationErrors = {
   nome?: string;
@@ -41,20 +42,7 @@ export class AuthViewModel {
   }
 
   private isTokenValid(token: string): boolean {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const exp = payload.exp;
-      
-      if (!exp) return false;
-      
-      // Converter exp (timestamp) para milissegundos e comparar
-      const expirationTime = exp * 1000;
-      const now = Date.now();
-      
-      return expirationTime > now;
-    } catch (error) {
-      return false;
-    }
+    return isJwtValid(token);
   }
 
   private set(next: Partial<AuthState>) {

@@ -1,30 +1,43 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { AppHeader } from '../components/layout/AppHeader';
 import RejectModal from '../components/ui/RejectModal';
 import { homeStyles } from '../../presentation/styles/homeStyles';
 import { WorkoutPlan } from '../../domain/entities/WorkoutPlan';
-import { loadWorkoutPlans } from '../../infra/workoutPlanStorage';
 import * as secure from '../../infra/secureStore';
+import userService from '../../infra/userService';
+import { fetchUserWorkoutPlans } from '../../services/workoutPlanService';
 
 const HomeScreen = ({ navigation }: any) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(false);
 
-  // Carrega os planos salvos quando a tela recebe foco
+  const loadPlansFromBackend = useCallback(async () => {
+    try {
+      setIsLoadingPlans(true);
+      const userId = await userService.getCurrentUserId();
+      if (!userId) {
+        setWorkoutPlans([]);
+        return;
+      }
+
+      const plans = await fetchUserWorkoutPlans(Number(userId));
+      setWorkoutPlans(plans);
+    } catch (error) {
+      console.error('Error loading plans from backend:', error);
+      setWorkoutPlans([]);
+    } finally {
+      setIsLoadingPlans(false);
+    }
+  }, []);
+
+  // Carrega os planos do backend quando a tela recebe foco
   useFocusEffect(
     useCallback(() => {
-      const loadPlans = async () => {
-        try {
-          const plans = await loadWorkoutPlans();
-          setWorkoutPlans(plans);
-        } catch (error) {
-          console.error('Error loading plans:', error);
-        }
-      };
-      loadPlans();
-    }, [])
+      loadPlansFromBackend();
+    }, [loadPlansFromBackend])
   );
 
   const handleSettings = () => {
@@ -86,7 +99,12 @@ const HomeScreen = ({ navigation }: any) => {
         <View style={homeStyles.section}>
           <Text style={homeStyles.sectionTitle}>Programas de Treino</Text>
           
-          {workoutPlans.length === 0 ? (
+          {isLoadingPlans ? (
+            <View style={homeStyles.programsContainer}>
+              <ActivityIndicator size="large" color="#FFFFFF" />
+              <Text style={homeStyles.emptySubtext}>Carregando treinos personalizados...</Text>
+            </View>
+          ) : workoutPlans.length === 0 ? (
             <View style={homeStyles.programsContainer}>
               <Text style={homeStyles.emptyText}>Nenhum programa criado ainda</Text>
               <Text style={homeStyles.emptySubtext}>Crie seu primeiro programa de treino</Text>

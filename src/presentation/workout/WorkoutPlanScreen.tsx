@@ -1,12 +1,13 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { AppHeader } from '../components/layout/AppHeader';
 import SuccessModal from '../components/ui/SuccessModal';
 import RejectModal from '../components/ui/RejectModal';
 import { workoutPlanStyles } from '../styles/workoutPlanStyles';
-import { WorkoutPlan } from '../../domain/entities/WorkoutPlan';
-import { addWorkoutPlan, loadWorkoutPlans } from '../../infra/workoutPlanStorage';
+import { WorkoutPlan, WorkoutPlanDay } from '../../domain/entities/WorkoutPlan';
 import * as secure from '../../infra/secureStore';
+import userService from '../../infra/userService';
+import { fetchProgramWorkouts } from '../../services/workoutPlanService';
 
 interface WorkoutPlanScreenProps {
   navigation: any;
@@ -18,10 +19,57 @@ interface WorkoutPlanScreenProps {
   };
 }
 
+const normalizeText = (value?: string | null): string | null => {
+  if (!value) return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const normalized = trimmed.toLowerCase();
+
+  if (normalized.includes('iniciante')) return 'Iniciante';
+  if (normalized.includes('intermediario') || normalized.includes('intermediário')) return 'Intermediário';
+  if (normalized.includes('avancado') || normalized.includes('avançado')) return 'Avançado';
+
+  if (normalized.startsWith('upper')) return 'Upper Body';
+  if (normalized.startsWith('lower')) return 'Lower Body';
+  if (normalized.startsWith('push')) return 'Push Day';
+  if (normalized.startsWith('pull')) return 'Pull Day';
+  if (normalized.startsWith('legs') || normalized.startsWith('perna')) return 'Leg Day';
+  if (normalized.startsWith('fullbody')) return 'Full Body';
+
+  return trimmed
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const formatDifficulty = (value?: string | null, fallback?: string | null): string | null => {
+  const normalized = normalizeText(value);
+  if (normalized) return normalized;
+
+  const fallbackNormalized = normalizeText(fallback);
+  if (fallbackNormalized) return fallbackNormalized;
+
+  return null;
+};
+
+const getDaySubtitle = (day: WorkoutPlanDay): string => {
+  return (
+    formatDifficulty(day.difficulty, day.routineType) ??
+    'Treino Personalizado'
+  );
+};
+
 const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
   const workoutPlan = route.params?.workoutPlan;
   const fromHome = route.params?.fromHome || false;
   
+  const [planDetails, setPlanDetails] = useState<WorkoutPlan | null>(workoutPlan ?? null);
+  const [planDays, setPlanDays] = useState<WorkoutPlanDay[]>(workoutPlan?.days ?? []);
+  const [isLoadingDays, setIsLoadingDays] = useState(false);
+
   // Estado para controlar o salvamento e evitar múltiplos cliques
   const [isSaving, setIsSaving] = useState(false);
   
@@ -39,7 +87,52 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
     setShowLogoutModal(true);
   }, []);
 
-  if (!workoutPlan) {
+  useEffect(() => {
+    setPlanDetails(workoutPlan ?? null);
+    setPlanDays(workoutPlan?.days ?? []);
+  }, [workoutPlan]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProgramDays = async () => {
+      if (!planDetails?.id) {
+        return;
+      }
+
+      if (planDays.length > 0) {
+        return;
+      }
+
+      try {
+        setIsLoadingDays(true);
+        const userId = await userService.getCurrentUserId();
+        if (!userId) {
+          return;
+        }
+
+        const remoteDays = await fetchProgramWorkouts(Number(userId), planDetails.id);
+        if (isMounted) {
+          setPlanDays(remoteDays);
+          setPlanDetails((prev) => (prev ? { ...prev, days: remoteDays } : prev));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar treinos do programa:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoadingDays(false);
+        }
+      }
+    };
+
+    loadProgramDays();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [planDetails?.id, planDays.length]);
+
+  if (!planDetails) {
     return (
       <View style={workoutPlanStyles.container}>
         <AppHeader 
@@ -63,35 +156,28 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
       return;
     }
     
-    if (!workoutPlan) {
+    if (!planDetails) {
       Alert.alert('Erro', 'Plano de treino não encontrado');
       return;
     }
     
     try {
-      // Marca como salvando para desabilitar o botão
       setIsSaving(true);
-      console.log('Saving workout plan:', workoutPlan.name);
-      
-      // Salvar o plano de treino
-      await addWorkoutPlan(workoutPlan);
-      console.log('Workout plan saved successfully');
-      
-      // Libera o estado de salvamento
-      setIsSaving(false);
-      
-      // Mostra o modal de sucesso ao invés de navegar diretamente
+
+      // Pequeno delay para reforçar feedback visual
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
       setShowSuccessModal(true);
-      
     } catch (error) {
       console.error('Error in handleAccept:', error);
-      setIsSaving(false); // Libera o botão em caso de erro
       Alert.alert(
-        'Erro', 
-        `Não foi possível salvar o treino: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+        'Erro',
+        `Não foi possível confirmar o treino: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
       );
+    } finally {
+      setIsSaving(false);
     }
-  }, [isSaving, workoutPlan, navigation]);
+  }, [isSaving, planDetails, navigation]);
 
   // Função para lidar com o fechamento do modal de sucesso
   const handleSuccessModalClose = useCallback(() => {
@@ -155,17 +241,27 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
   }, []);
 
   const handleRequestChanges = () => {
-    navigation.navigate('WorkoutAdjustments', { workoutPlan });
+    navigation.navigate('WorkoutAdjustments', { workoutPlan: planDetails });
   };
 
   const handleDayPress = (dayId: string, routineType: string, dayName: string) => {
+    if (!planDetails) {
+      return;
+    }
+
+    const day = planDays.find((item) => item.id === dayId);
+    if (!day) {
+      Alert.alert('Erro', 'Dia de treino não encontrado.');
+      return;
+    }
+
     navigation.navigate('WorkoutDetail', { 
-      routineType,
-      dayName,
-      planId: workoutPlan.id,
+      routineType: day.routineType || routineType,
+      dayName: day.name || dayName,
+      planId: planDetails.id,
       dayId: dayId, // Passar o ID do dia específico
       fromHome: fromHome,
-      workoutPlan: workoutPlan // Passar o plano atual (ainda não salvo)
+      workoutPlan: { ...planDetails, days: planDays }, // Passar o plano atual (ainda não salvo)
     });
   };
 
@@ -177,35 +273,46 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
         {/* Cabeçalho do Plano */}
         <View style={workoutPlanStyles.header}>
           <Text style={workoutPlanStyles.badge}>TREINO CRIADO</Text>
-          <Text style={workoutPlanStyles.planName}>{workoutPlan.name}</Text>
-          <Text style={workoutPlanStyles.planDescription}>{workoutPlan.description}</Text>
+          <Text style={workoutPlanStyles.planName}>{planDetails.name}</Text>
+          <Text style={workoutPlanStyles.planDescription}>{planDetails.description}</Text>
         </View>
 
         {/* Lista de Dias */}
         <View style={workoutPlanStyles.daysSection}>
           <Text style={workoutPlanStyles.sectionTitle}>Rotina Semanal</Text>
           
-          {workoutPlan.days.map((day, index) => (
-            <TouchableOpacity
-              key={day.id}
-              style={workoutPlanStyles.dayCard}
-              onPress={() => handleDayPress(day.id, day.routineType, day.name)}
-              activeOpacity={0.7}
-            >
-              <View style={workoutPlanStyles.dayNumberBadge}>
-                <Text style={workoutPlanStyles.dayNumberText}>{day.dayNumber}</Text>
-              </View>
-              
-              <View style={workoutPlanStyles.dayInfo}>
-                <Text style={workoutPlanStyles.dayName}>{day.name}</Text>
-                <Text style={workoutPlanStyles.dayType}>
-                  {day.routineType.toUpperCase()}
-                </Text>
-              </View>
-              
-              <Text style={workoutPlanStyles.chevron}>›</Text>
-            </TouchableOpacity>
-          ))}
+          {isLoadingDays ? (
+            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+              <Text style={workoutPlanStyles.infoText}>Carregando treinos do programa...</Text>
+            </View>
+          ) : planDays.length === 0 ? (
+            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+              <Text style={workoutPlanStyles.infoText}>Nenhum dia de treino encontrado para este programa.</Text>
+            </View>
+          ) : (
+            planDays.map((day) => (
+              <TouchableOpacity
+                key={day.id}
+                style={workoutPlanStyles.dayCard}
+                onPress={() => handleDayPress(day.id, day.routineType, day.name)}
+                activeOpacity={0.7}
+              >
+                <View style={workoutPlanStyles.dayNumberBadge}>
+                  <Text style={workoutPlanStyles.dayNumberText}>{day.dayNumber}</Text>
+                </View>
+                
+                <View style={workoutPlanStyles.dayInfo}>
+                  <Text style={workoutPlanStyles.dayName}>{day.name}</Text>
+                  <Text style={workoutPlanStyles.dayType}>
+                    {getDaySubtitle(day)}
+                  </Text>
+                </View>
+                
+                <Text style={workoutPlanStyles.chevron}>›</Text>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         {/* Info adicional */}

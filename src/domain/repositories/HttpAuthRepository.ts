@@ -1,4 +1,6 @@
 import { AuthRepository } from "../entities/AuthRepository";
+import { API_BASE_URL } from "../../infra/apiConfig";
+import { decodeJwtPayload } from "../../utils/jwt";
 
 /**
  * Repositório HTTP para autenticação
@@ -11,10 +13,10 @@ export class HttpAuthRepository implements AuthRepository {
   // 2. Iniciar o backend com: uv run task s
   // 3. O backend deve estar rodando em http://0.0.0.0:8000
   // Para descobrir seu IP: execute get_ip.bat na pasta backend
-  private baseURL = 'http://192.168.0.4:8000' // Seu IP atual da rede
+  private baseURL = API_BASE_URL; // Configurado em infra/apiConfig.ts
   
   // Alternativa para testar na web (navegador):
-  // private baseURL = 'http://localhost:8000'
+  // Atualize infra/apiConfig.ts para usar localhost quando necessário
 
   async login(email: string, senha: string): Promise<{ token: string }> {
     try {
@@ -101,11 +103,14 @@ export class HttpAuthRepository implements AuthRepository {
   async me(token: string): Promise<{ id: string; nome: string; username: string; email: string }> {
     try {
       console.log('🔑 Decodificando token:', token);
-      
-      // Decodificar o JWT para pegar os dados do usuário
-      const payload = JSON.parse(atob(token.split('.')[1]));
+
+      const payload = decodeJwtPayload(token);
+      if (!payload) {
+        throw new Error('Token inválido');
+      }
+
       console.log('📦 Payload decodificado:', payload);
-      
+
       const userData = payload.sub;
       console.log('👤 Dados do usuário:', userData);
       

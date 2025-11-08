@@ -6,6 +6,17 @@ export const workoutDetailStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: colors.secondary,
+  },
   content: {
     flex: 1,
   },

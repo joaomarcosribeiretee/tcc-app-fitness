@@ -7,7 +7,12 @@ import { workoutPlanStyles } from '../styles/workoutPlanStyles';
 import { WorkoutPlan, WorkoutPlanDay } from '../../domain/entities/WorkoutPlan';
 import * as secure from '../../infra/secureStore';
 import userService from '../../infra/userService';
-import { fetchProgramWorkouts } from '../../services/workoutPlanService';
+import {
+  fetchProgramWorkouts,
+  confirmWorkoutPlan,
+  IAPlanResponse,
+  AnamnesePayload,
+} from '../../services/workoutPlanService';
 
 interface WorkoutPlanScreenProps {
   navigation: any;
@@ -15,6 +20,8 @@ interface WorkoutPlanScreenProps {
     params?: {
       workoutPlan?: WorkoutPlan;
       fromHome?: boolean;
+      rawPlan?: IAPlanResponse;
+      anamnesis?: AnamnesePayload;
     };
   };
 }
@@ -65,11 +72,13 @@ const getDaySubtitle = (day: WorkoutPlanDay): string => {
 const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
   const workoutPlan = route.params?.workoutPlan;
   const fromHome = route.params?.fromHome || false;
+  const initialRawPlan = route.params?.rawPlan ?? null;
+  const initialAnamnesis = route.params?.anamnesis ?? null;
   
   const [planDetails, setPlanDetails] = useState<WorkoutPlan | null>(workoutPlan ?? null);
-  const [planDays, setPlanDays] = useState<WorkoutPlanDay[]>(workoutPlan?.days ?? []);
-  const [isLoadingDays, setIsLoadingDays] = useState(false);
-
+  const [rawPlan, setRawPlan] = useState<IAPlanResponse | null>(initialRawPlan);
+  const [anamnesis, setAnamnesis] = useState<AnamnesePayload | null>(initialAnamnesis);
+  
   // Estado para controlar o salvamento e evitar múltiplos cliques
   const [isSaving, setIsSaving] = useState(false);
   
@@ -88,49 +97,16 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
   }, []);
 
   useEffect(() => {
-    setPlanDetails(workoutPlan ?? null);
-    setPlanDays(workoutPlan?.days ?? []);
-  }, [workoutPlan]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadProgramDays = async () => {
-      if (!planDetails?.id) {
-        return;
-      }
-
-      if (planDays.length > 0) {
-        return;
-      }
-
-      try {
-        setIsLoadingDays(true);
-        const userId = await userService.getCurrentUserId();
-        if (!userId) {
-          return;
-        }
-
-        const remoteDays = await fetchProgramWorkouts(Number(userId), planDetails.id);
-        if (isMounted) {
-          setPlanDays(remoteDays);
-          setPlanDetails((prev) => (prev ? { ...prev, days: remoteDays } : prev));
-        }
-      } catch (error) {
-        console.error('Erro ao carregar treinos do programa:', error);
-      } finally {
-        if (isMounted) {
-          setIsLoadingDays(false);
-        }
-      }
-    };
-
-    loadProgramDays();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [planDetails?.id, planDays.length]);
+    if (workoutPlan) {
+      setPlanDetails(workoutPlan);
+    }
+    if (initialRawPlan) {
+      setRawPlan(initialRawPlan);
+    }
+    if (initialAnamnesis) {
+      setAnamnesis(initialAnamnesis);
+    }
+  }, [workoutPlan, initialRawPlan, initialAnamnesis]);
 
   if (!planDetails) {
     return (
@@ -156,7 +132,7 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
       return;
     }
     
-    if (!planDetails) {
+    if (!planDetails || !rawPlan) {
       Alert.alert('Erro', 'Plano de treino não encontrado');
       return;
     }
@@ -164,8 +140,38 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
     try {
       setIsSaving(true);
 
-      // Pequeno delay para reforçar feedback visual
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      const confirmResult = await confirmWorkoutPlan(rawPlan);
+
+      const userId = await userService.getCurrentUserId();
+      let daysToApply: WorkoutPlanDay[] = planDetails.days;
+      let programId = planDetails.id;
+
+      if (
+        userId &&
+        confirmResult?.programa?.id_programa_treino != null
+      ) {
+        programId = String(confirmResult.programa.id_programa_treino);
+        try {
+          const persistedDays = await fetchProgramWorkouts(
+            Number(userId),
+            confirmResult.programa.id_programa_treino
+          );
+          if (persistedDays.length) {
+            daysToApply = persistedDays;
+          }
+        } catch (error) {
+          console.warn('Não foi possível carregar o plano persistido:', error);
+        }
+      }
+
+      setPlanDetails({
+        id: programId,
+        name: confirmResult.programa?.nome || planDetails.name,
+        description: confirmResult.programa?.descricao || planDetails.description,
+        createdAt: new Date(),
+        days: daysToApply,
+      });
+      setRawPlan(null);
 
       setShowSuccessModal(true);
     } catch (error) {
@@ -241,7 +247,16 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
   }, []);
 
   const handleRequestChanges = () => {
-    navigation.navigate('WorkoutAdjustments', { workoutPlan: planDetails });
+    if (!planDetails || !rawPlan || !anamnesis) {
+      Alert.alert('Erro', 'Não foi possível preparar o pedido de alterações.');
+      return;
+    }
+
+    navigation.navigate('WorkoutAdjustments', {
+      workoutPlan: planDetails,
+      rawPlan,
+      anamnesis,
+    });
   };
 
   const handleDayPress = (dayId: string, routineType: string, dayName: string) => {
@@ -249,7 +264,7 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
       return;
     }
 
-    const day = planDays.find((item) => item.id === dayId);
+    const day = planDetails.days.find((item) => item.id === dayId);
     if (!day) {
       Alert.alert('Erro', 'Dia de treino não encontrado.');
       return;
@@ -261,7 +276,7 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
       planId: planDetails.id,
       dayId: dayId, // Passar o ID do dia específico
       fromHome: fromHome,
-      workoutPlan: { ...planDetails, days: planDays }, // Passar o plano atual (ainda não salvo)
+      workoutPlan: planDetails, // Passar o plano atual (ainda não salvo)
     });
   };
 
@@ -281,17 +296,12 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
         <View style={workoutPlanStyles.daysSection}>
           <Text style={workoutPlanStyles.sectionTitle}>Rotina Semanal</Text>
           
-          {isLoadingDays ? (
-            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-              <ActivityIndicator size="small" color="#FFFFFF" />
-              <Text style={workoutPlanStyles.infoText}>Carregando treinos do programa...</Text>
-            </View>
-          ) : planDays.length === 0 ? (
+          {planDetails.days.length === 0 ? (
             <View style={{ paddingVertical: 24, alignItems: 'center' }}>
               <Text style={workoutPlanStyles.infoText}>Nenhum dia de treino encontrado para este programa.</Text>
             </View>
           ) : (
-            planDays.map((day) => (
+            planDetails.days.map((day) => (
               <TouchableOpacity
                 key={day.id}
                 style={workoutPlanStyles.dayCard}

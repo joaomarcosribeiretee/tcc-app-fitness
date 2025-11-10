@@ -14,20 +14,28 @@ import LoadingModal from '../components/ui/LoadingModal';
 import RejectModal from '../components/ui/RejectModal';
 import { workoutAdjustmentsStyles } from '../styles/adjustmentsStyles';
 import { WorkoutPlan } from '../../domain/entities/WorkoutPlan';
-import { mockWorkouts } from '../../data/mockWorkouts';
 import * as secure from '../../infra/secureStore';
+import {
+  AnamnesePayload,
+  IAPlanResponse,
+  requestWorkoutPlanAdjustments,
+} from '../../services/workoutPlanService';
 
 interface WorkoutAdjustmentsScreenProps {
   navigation: any;
   route: {
     params?: {
       workoutPlan?: WorkoutPlan;
+      rawPlan?: IAPlanResponse;
+      anamnesis?: AnamnesePayload;
     };
   };
 }
 
 const WorkoutAdjustmentsScreen = ({ navigation, route }: WorkoutAdjustmentsScreenProps) => {
   const workoutPlan = route.params?.workoutPlan;
+  const rawPlan = route.params?.rawPlan;
+  const anamnesis = route.params?.anamnesis;
   const [adjustmentText, setAdjustmentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -86,102 +94,44 @@ const WorkoutAdjustmentsScreen = ({ navigation, route }: WorkoutAdjustmentsScree
       return;
     }
 
+    if (!workoutPlan || !rawPlan || !anamnesis) {
+      Alert.alert('Erro', 'Não foi possível enviar o pedido de alteração no momento.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setLoadingStep(1);
-      
-      // Simular envio para a IA (futuramente será uma API real)
-      console.log('Solicitação de alteração:', {
-        planId: workoutPlan.id,
-        planName: workoutPlan.name,
-        adjustments: adjustmentText.trim()
+
+      const { workoutPlan: updatedPlan, rawPlan: updatedRawPlan } = await requestWorkoutPlanAdjustments({
+        anamnesis,
+        currentPlan: rawPlan,
+        adjustments: adjustmentText.trim(),
       });
-      
-      // Etapa 1: Enviando solicitação (1 segundo)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+
       setLoadingStep(2);
-      
-      // Etapa 2: Processando com IA (2 segundos)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setLoadingStep(3);
-      
-      // Simular geração de novo treino (PPL ao invés de Upper/Lower)
-      // Incluir os exercícios específicos de cada dia
-      const newWorkoutPlan: WorkoutPlan = {
-        id: `plan-${Date.now()}`, // Novo ID único
-        name: 'PUSH PULL LEGS',
-        description: 'Treino dividido em empurrar, puxar e pernas - baseado nas suas alterações',
-        createdAt: new Date(),
-        days: [
-          {
-            id: 'day-1',
-            dayNumber: 1,
-            routineType: 'push' as const,
-            name: 'Push 1',
-            exercises: mockWorkouts.push.exercises,
-          },
-          {
-            id: 'day-2',
-            dayNumber: 2,
-            routineType: 'pull' as const,
-            name: 'Pull 1',
-            exercises: mockWorkouts.pull.exercises,
-          },
-          {
-            id: 'day-3',
-            dayNumber: 3,
-            routineType: 'legs' as const,
-            name: 'Legs 1',
-            exercises: mockWorkouts.legs.exercises,
-          },
-          {
-            id: 'day-4',
-            dayNumber: 4,
-            routineType: 'push' as const,
-            name: 'Push 2',
-            exercises: mockWorkouts.push.exercises,
-          },
-          {
-            id: 'day-5',
-            dayNumber: 5,
-            routineType: 'pull' as const,
-            name: 'Pull 2',
-            exercises: mockWorkouts.pull.exercises,
-          },
-          {
-            id: 'day-6',
-            dayNumber: 6,
-            routineType: 'legs' as const,
-            name: 'Legs 2',
-            exercises: mockWorkouts.legs.exercises,
-          },
-        ],
-      };
-      
-      // Esconder o loading antes da navegação para evitar flash
+
       setIsSubmitting(false);
       setLoadingStep(0);
-      
-      // Pequeno delay para garantir transição suave
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Navegar de volta para a tela de aceitar/recusar o novo treino
-      // Usando replace para substituir a tela de ajustes no histórico
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
       navigation.replace('WorkoutPlan', {
-        workoutPlan: newWorkoutPlan,
-        fromHome: false // Vem de alterações, não da tela inicial
+        workoutPlan: updatedPlan,
+        rawPlan: updatedRawPlan,
+        anamnesis,
+        fromHome: false,
       });
-      
     } catch (error) {
       console.error('Error submitting adjustments:', error);
       setIsSubmitting(false);
       setLoadingStep(0);
       Alert.alert(
         'Erro',
-        'Não foi possível processar sua solicitação. Tente novamente.'
+        error instanceof Error ? error.message : 'Não foi possível processar sua solicitação. Tente novamente.'
       );
     }
-  }, [adjustmentText, workoutPlan, navigation]);
+  }, [adjustmentText, workoutPlan, rawPlan, anamnesis, navigation]);
 
   const handleCancel = useCallback(() => {
     if (adjustmentText.trim()) {
@@ -316,13 +266,13 @@ const WorkoutAdjustmentsScreen = ({ navigation, route }: WorkoutAdjustmentsScree
         visible={isSubmitting}
         title={
           loadingStep === 1 ? 'Enviando solicitação...' :
-          loadingStep === 2 ? 'Processando com IA...' :
-          'Gerando novo treino...'
+          loadingStep === 2 ? 'Gerando novo treino...' :
+          'Processando...'
         }
         subtitle={
-          loadingStep === 1 ? 'Enviando suas alterações para análise' :
-          loadingStep === 2 ? 'A IA está analisando e criando um novo plano' :
-          'Finalizando o treino personalizado'
+          loadingStep === 1 ? 'Preparando seu pedido para a IA' :
+          loadingStep === 2 ? 'A IA está criando o novo plano personalizado' :
+          'Aguarde, estamos quase lá'
         }
       />
     </KeyboardAvoidingView>

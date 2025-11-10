@@ -35,21 +35,28 @@ interface IAPlanTreino {
   exercicios: IAPlanExercise[];
 }
 
-interface IAPlanResponse {
-  mensagem?: string;
+export interface IAPlanResponse {
+  programaTreino: {
+    nomePrograma: string;
+    descricaoPrograma: string;
+  };
+  treinos: IAPlanTreino[];
+}
+
+interface PreviewResponse {
+  message: string;
+  plano: IAPlanResponse;
+}
+
+interface ConfirmResponse {
+  message: string;
   programa: {
     id_programa_treino: number;
     nome: string;
     descricao: string;
   };
   treinosIds: number[];
-  plano: {
-    programaTreino: {
-      nomePrograma: string;
-      descricaoPrograma: string;
-    };
-    treinos: IAPlanTreino[];
-  };
+  plano: IAPlanResponse;
 }
 
 interface BackendProgramaTreino {
@@ -59,10 +66,6 @@ interface BackendProgramaTreino {
   descricao: string | null;
   created_at?: string | null;
   updated_at?: string | null;
-}
-
-interface BackendProgramasResponse {
-  programas_treino: BackendProgramaTreino[];
 }
 
 interface BackendTreinoPrograma {
@@ -83,11 +86,19 @@ interface BackendTreinoExercise {
   reps: number | null;
 }
 
-interface BackendExercisesResponse {
-  exercicios: BackendTreinoExercise[];
+interface BackendExerciseCatalog {
+  id_exercicio: number;
+  nome: string | null;
+  descricao: string | null;
+  grupo_muscular: string | null;
+  equipamento: string | null;
 }
 
-function toRoutineType(value?: string | null): RoutineType {
+interface ExerciseCatalogResponse {
+  exercicios: BackendExerciseCatalog[];
+}
+
+const toRoutineType = (value?: string | null): RoutineType => {
   const normalized = (value || '').toLowerCase();
   if (['upper', 'lower', 'push', 'pull', 'legs', 'fullbody'].includes(normalized)) {
     return normalized as RoutineType;
@@ -100,62 +111,70 @@ function toRoutineType(value?: string | null): RoutineType {
   if (normalized.includes('perna') || normalized.includes('legs')) return 'legs';
 
   return 'fullbody';
-}
+};
 
-function mapExercises(exercises: IAPlanExercise[] | undefined): Exercise[] {
+const mapExercises = (
+  exercises: IAPlanExercise[] | undefined,
+  catalog: Record<number, BackendExerciseCatalog> | undefined
+): Exercise[] => {
   if (!exercises || exercises.length === 0) {
     return [];
   }
 
-  return exercises.map((exercise) => ({
-    id: String(exercise.idExercicio),
-    name: `Exercício ${exercise.idExercicio}`,
-    bodyPart: 'Desconhecido',
-    target: 'Personalizado',
-    equipment: 'A definir',
-    sets: exercise.series,
-    reps: String(exercise.repeticoes),
-    rest: `${exercise.descansoSegundos}s`,
-  }));
-}
+  return exercises.map((exercise) => {
+    const catalogInfo = catalog?.[exercise.idExercicio];
 
-function mapTreinos(treinos: IAPlanTreino[] | undefined): WorkoutPlanDay[] {
+    return {
+      id: String(exercise.idExercicio),
+      name: catalogInfo?.nome || `Exercício ${exercise.idExercicio}`,
+      bodyPart: catalogInfo?.grupo_muscular || 'Personalizado',
+      target: catalogInfo?.grupo_muscular || 'Personalizado',
+      equipment: catalogInfo?.equipamento || 'A definir',
+      sets: exercise.series,
+      reps: String(exercise.repeticoes),
+      rest: `${exercise.descansoSegundos}s`,
+    };
+  });
+};
+
+const mapTreinos = (
+  treinos: IAPlanTreino[] | undefined,
+  catalog: Record<number, BackendExerciseCatalog> | undefined
+): WorkoutPlanDay[] => {
   if (!treinos || treinos.length === 0) {
     return [];
   }
 
   return treinos.map((treino, index) => ({
-    id: String(treino.nome ?? treino.descricao ?? `day-${index + 1}`),
+    id: `day-${index + 1}`,
     dayNumber: index + 1,
     routineType: toRoutineType(treino.descricao ?? treino.dificuldade ?? treino.nome),
     name: treino.nome || `Treino ${index + 1}`,
-    exercises: mapExercises(treino.exercicios),
+    exercises: mapExercises(treino.exercicios, catalog),
     completed: false,
     description: treino.descricao,
     duration: treino.duracaoMinutos,
     difficulty: treino.dificuldade,
   }));
-}
+};
 
-function mapToWorkoutPlan(response: IAPlanResponse): WorkoutPlan {
-  const program = response.programa;
-  const rawPlan = response.plano;
-
-  const planName = rawPlan?.programaTreino?.nomePrograma || program?.nome || 'Treino Personalizado';
-  const planDescription = rawPlan?.programaTreino?.descricaoPrograma || program?.descricao || '';
-
-  const days = mapTreinos(rawPlan?.treinos);
+const mapToWorkoutPlan = (
+  response: IAPlanResponse,
+  catalog: Record<number, BackendExerciseCatalog> | undefined
+): WorkoutPlan => {
+  const planName = response?.programaTreino?.nomePrograma || 'Treino Personalizado';
+  const planDescription = response?.programaTreino?.descricaoPrograma || '';
 
   return {
-    id: String(program?.id_programa_treino ?? Date.now()),
+    id: String(Date.now()),
     name: planName,
     description: planDescription,
     createdAt: new Date(),
-    days,
+    days: mapTreinos(response?.treinos, catalog),
   };
-}
+};
 
-async function httpGet<T>(url: string): Promise<T> {
+const httpGet = async <T>(url: string): Promise<T> => {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
@@ -176,11 +195,114 @@ async function httpGet<T>(url: string): Promise<T> {
   }
 
   return (await response.json()) as T;
-}
+};
 
-export async function generateWorkoutPlanFromIA(
+const fetchExerciseCatalog = async (
+  ids: number[]
+): Promise<Record<number, BackendExerciseCatalog>> => {
+  if (!ids.length) {
+    return {};
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/exercicios/catalogo`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ exerciciosIds: ids }),
+  });
+
+  if (!response.ok) {
+    console.warn('Não foi possível carregar o catálogo de exercícios.');
+    return {};
+  }
+
+  const data = (await response.json()) as ExerciseCatalogResponse;
+  const catalog: Record<number, BackendExerciseCatalog> = {};
+
+  for (const item of data.exercicios ?? []) {
+    if (item?.id_exercicio != null) {
+      catalog[item.id_exercicio] = item;
+    }
+  }
+
+  return catalog;
+};
+
+const mapBackendExercises = (exercicios: BackendTreinoExercise[] | undefined): Exercise[] => {
+  if (!exercicios) {
+    return [];
+  }
+
+  return exercicios.map((item, index) => ({
+    id: String(item.id_ex_treino ?? `${index + 1}`),
+    name: item.nome || `Exercício ${index + 1}`,
+    bodyPart: item.grupo_muscular || 'Geral',
+    target: item.grupo_muscular || 'Personalizado',
+    equipment: item.equipamento || 'Corpo Livre',
+    sets: item.series != null ? Number(item.series) : undefined,
+    reps: item.reps != null ? String(item.reps) : undefined,
+    rest: item.descanso != null ? `${item.descanso}s` : undefined,
+  }));
+};
+
+const fetchTreinosPersistidos = async (
+  userId: number,
+  programId: number
+): Promise<WorkoutPlanDay[]> => {
+  const treinos = await httpGet<BackendTreinoPrograma[]>(
+    `${API_BASE_URL}/api/treinos-programa?user_id=${userId}&id_programa=${programId}`
+  );
+
+  const days: WorkoutPlanDay[] = [];
+
+  for (let index = 0; index < treinos.length; index += 1) {
+    const treino = treinos[index];
+    const exercicios = await httpGet<BackendTreinoExercise[]>(
+      `${API_BASE_URL}/api/exercicios-treinos?user_id=${userId}&id_treino=${treino.id}`
+    );
+
+    days.push({
+      id: String(treino.id),
+      dayNumber: index + 1,
+      routineType: toRoutineType(treino.nome ?? treino.descricao ?? treino.dificuldade),
+      name: treino.nome || `Treino ${index + 1}`,
+      exercises: mapBackendExercises(exercicios),
+      completed: false,
+      description: treino.descricao,
+      duration: treino.duracao,
+      difficulty: treino.dificuldade,
+    });
+  }
+
+  return days;
+};
+
+const mapBackendProgramas = (
+  programas: BackendProgramaTreino[] | undefined,
+  treinos: Record<string, WorkoutPlanDay[]>
+): WorkoutPlan[] => {
+  if (!programas) return [];
+
+  return programas.map((programa) => {
+    const key = String(programa.id_programa_treino);
+    const days = treinos[key] ?? [];
+    const createdAt = programa.created_at ? new Date(programa.created_at) : new Date();
+
+    return {
+      id: key,
+      name: programa.nome || 'Programa sem título',
+      description: programa.descricao || '',
+      createdAt,
+      days,
+    } as WorkoutPlan;
+  });
+};
+
+export const generateWorkoutPlanFromIA = async (
   payload: AnamnesePayload
-): Promise<{ workoutPlan: WorkoutPlan; response: IAPlanResponse }> {
+): Promise<{ workoutPlan: WorkoutPlan; rawPlan: IAPlanResponse }> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 45000);
 
@@ -208,127 +330,153 @@ export async function generateWorkoutPlanFromIA(
       throw new Error(errorMessage);
     }
 
-    const data = (await response.json()) as IAPlanResponse;
-    const workoutPlan = mapToWorkoutPlan(data);
-    return { workoutPlan, response: data };
+    const data = (await response.json()) as PreviewResponse;
+
+    const uniqueIds = new Set<number>();
+    data.plano?.treinos?.forEach((treino) => {
+      treino?.exercicios?.forEach((ex) => {
+        if (Number.isFinite(ex?.idExercicio)) {
+          uniqueIds.add(Number(ex.idExercicio));
+        }
+      });
+    });
+
+    const catalog = await fetchExerciseCatalog(Array.from(uniqueIds));
+    const workoutPlan = mapToWorkoutPlan(data.plano, catalog);
+    return { workoutPlan, rawPlan: data.plano };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Tempo limite excedido ao gerar o treino');
     }
     throw error instanceof Error ? error : new Error('Erro desconhecido ao gerar o treino');
   }
-}
+};
 
-function mapProgramWorkouts(treinos: BackendTreinoPrograma[] | undefined): WorkoutPlanDay[] {
-  if (!treinos) return [];
-
-  return treinos.map((treino, index) => ({
-    id: String(treino.id),
-    dayNumber: index + 1,
-    routineType: toRoutineType(treino.nome ?? treino.descricao ?? treino.dificuldade),
-    name: treino.nome || `Treino ${index + 1}`,
-    exercises: [],
-    completed: false,
-    description: treino.descricao,
-    duration: treino.duracao,
-    difficulty: treino.dificuldade,
-  }));
-}
-
-function mapBackendProgramas(
-  programas: BackendProgramaTreino[] | undefined,
-  treinosByProgram: Map<number, WorkoutPlanDay[]> | undefined
-): WorkoutPlan[] {
-  if (!programas) return [];
-
-  return programas.map((programa) => {
-    const days = treinosByProgram?.get(programa.id_programa_treino) ?? [];
-    const createdAt = programa.created_at ? new Date(programa.created_at) : new Date();
-
-    return {
-      id: String(programa.id_programa_treino),
-      name: programa.nome || 'Programa sem título',
-      description: programa.descricao || '',
-      createdAt,
-      days,
-    } as WorkoutPlan;
+export const requestWorkoutPlanAdjustments = async ({
+  anamnesis,
+  currentPlan,
+  adjustments,
+}: {
+  anamnesis: AnamnesePayload;
+  currentPlan: IAPlanResponse;
+  adjustments: string;
+}): Promise<{ workoutPlan: WorkoutPlan; rawPlan: IAPlanResponse }> => {
+  const response = await fetch(`${API_BASE_URL}/api/gpt/ajustar`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      anamnese: anamnesis,
+      planoAtual: currentPlan,
+      ajustes: adjustments,
+    }),
   });
-}
 
-export async function fetchProgramWorkouts(
+  if (!response.ok) {
+    let errorMessage = 'Erro ao solicitar ajustes do treino';
+    try {
+      const errorBody = await response.json();
+      errorMessage = errorBody.detail || errorMessage;
+    } catch (err) {
+      console.warn('Erro ao ler corpo de erro do backend:', err);
+    }
+    throw new Error(errorMessage);
+  }
+
+  const data = (await response.json()) as PreviewResponse;
+
+  const uniqueIds = new Set<number>();
+  data.plano?.treinos?.forEach((treino) => {
+    treino?.exercicios?.forEach((ex) => {
+      if (Number.isFinite(ex?.idExercicio)) {
+        uniqueIds.add(Number(ex.idExercicio));
+      }
+    });
+  });
+
+  const catalog = await fetchExerciseCatalog(Array.from(uniqueIds));
+  const workoutPlan = mapToWorkoutPlan(data.plano, catalog);
+  return { workoutPlan, rawPlan: data.plano };
+};
+
+export const confirmWorkoutPlan = async (rawPlan: IAPlanResponse): Promise<ConfirmResponse> => {
+  const response = await fetch(`${API_BASE_URL}/api/gpt/confirm`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ plano: rawPlan }),
+  });
+
+  if (!response.ok) {
+    let errorMessage = 'Erro ao confirmar plano de treino';
+    try {
+      const errorBody = await response.json();
+      errorMessage = errorBody.detail || errorMessage;
+    } catch (err) {
+      console.warn('Erro ao ler corpo de erro do backend:', err);
+    }
+    throw new Error(errorMessage);
+  }
+
+  return (await response.json()) as ConfirmResponse;
+};
+
+export const fetchProgramWorkouts = async (
   userId: number,
   programId: string | number
-): Promise<WorkoutPlanDay[]> {
+): Promise<WorkoutPlanDay[]> => {
   if (!Number.isFinite(userId)) {
     throw new Error('ID de usuário inválido');
   }
 
-  const treinos = await httpGet<BackendTreinoPrograma[]>(
-    `${API_BASE_URL}/api/treinos-programa?user_id=${userId}&id_programa=${programId}`
+  return fetchTreinosPersistidos(userId, Number(programId));
+};
+
+export const fetchWorkoutExercises = async (
+  userId: number,
+  treinoId: string | number
+): Promise<Exercise[]> => {
+  if (!Number.isFinite(userId)) {
+    throw new Error('ID de usuário inválido');
+  }
+
+  const exercicios = await httpGet<BackendTreinoExercise[]>(
+    `${API_BASE_URL}/api/exercicios-treinos?user_id=${userId}&id_treino=${treinoId}`
   );
 
-  return mapProgramWorkouts(treinos);
-}
+  return mapBackendExercises(exercicios);
+};
 
-export async function fetchUserWorkoutPlans(userId: number): Promise<WorkoutPlan[]> {
+export const fetchUserWorkoutPlans = async (userId: number): Promise<WorkoutPlan[]> => {
   if (!Number.isFinite(userId)) {
     throw new Error('ID de usuário inválido');
   }
 
-  const programasRes = await httpGet<BackendProgramasResponse>(
+  const programas = await httpGet<BackendProgramaTreino[]>(
     `${API_BASE_URL}/api/programas?userId=${userId}`
   );
 
-  const programas = programasRes?.programas_treino ?? [];
-  const treinosByProgram = new Map<number, WorkoutPlanDay[]>();
+  const treinosByProgram: Record<string, WorkoutPlanDay[]> = {};
 
   await Promise.all(
     programas.map(async (programa) => {
-      const programId = programa.id_programa_treino;
-      if (programId == null) return;
-
+      if (programa.id_programa_treino == null) return;
       try {
-        const days = await fetchProgramWorkouts(userId, programId);
-        treinosByProgram.set(programId, days);
+        treinosByProgram[String(programa.id_programa_treino)] = await fetchTreinosPersistidos(
+          userId,
+          programa.id_programa_treino
+        );
       } catch (error) {
-        console.error(`Erro ao carregar treinos do programa ${programId}:`, error);
-        treinosByProgram.set(programId, []);
+        console.warn(`Erro ao carregar treinos do programa ${programa.id_programa_treino}:`, error);
+        treinosByProgram[String(programa.id_programa_treino)] = [];
       }
     })
   );
 
-  const workoutPlans = mapBackendProgramas(programas, treinosByProgram);
-  return workoutPlans.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-}
-
-function mapBackendExerciseDetails(exercicios: BackendTreinoExercise[] | undefined): Exercise[] {
-  if (!exercicios) {
-    return [];
-  }
-
-  return exercicios.map((item, index) => ({
-    id: String(item.id_ex_treino ?? `${index + 1}`),
-    name: item.nome || `Exercício ${index + 1}`,
-    bodyPart: item.grupo_muscular || 'Geral',
-    target: item.grupo_muscular || 'Personalizado',
-    equipment: item.equipamento || 'Corpo Livre',
-    sets: item.series != null ? Number(item.series) : undefined,
-    reps: item.reps != null ? String(item.reps) : undefined,
-    rest: item.descanso != null ? `${item.descanso}s` : undefined,
-  }));
-}
-
-export async function fetchWorkoutExercises(
-  userId: number,
-  treinoId: string | number
-): Promise<Exercise[]> {
-  if (!Number.isFinite(userId)) {
-    throw new Error('ID de usuário inválido');
-  }
-
-  const response = await httpGet<BackendExercisesResponse>(
-    `${API_BASE_URL}/api/exercicios-treinos?user_id=${userId}&id_treino=${treinoId}`
-  );
-
-  return mapBackendExerciseDetails(response?.exercicios);
-}
+  const plans = mapBackendProgramas(programas, treinosByProgram);
+  return plans.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+};

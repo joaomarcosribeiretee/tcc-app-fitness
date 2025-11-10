@@ -211,9 +211,9 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
     setIsLoading(true);
     try {
       const payload = await buildPayload();
-      const { workoutPlan } = await generateWorkoutPlanFromIA(payload);
+      const { workoutPlan, rawPlan } = await generateWorkoutPlanFromIA(payload);
       setIsLoading(false);
-      navigation.navigate('WorkoutPlan', { workoutPlan });
+      navigation.navigate('WorkoutPlan', { workoutPlan, rawPlan, anamnesis: payload });
     } catch (error) {
       setIsLoading(false);
       const message = error instanceof Error ? error.message : 'Erro desconhecido ao gerar treino';

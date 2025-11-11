@@ -7,7 +7,7 @@ import { homeStyles } from '../../presentation/styles/homeStyles';
 import { WorkoutPlan } from '../../domain/entities/WorkoutPlan';
 import * as secure from '../../infra/secureStore';
 import userService from '../../infra/userService';
-import { fetchUserWorkoutPlans } from '../../services/workoutPlanService';
+import { fetchUserWorkoutProgramsSummary } from '../../services/workoutPlanService';
 
 const HomeScreen = ({ navigation }: any) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -23,7 +23,7 @@ const HomeScreen = ({ navigation }: any) => {
         return;
       }
 
-      const plans = await fetchUserWorkoutPlans(Number(userId));
+      const plans = await fetchUserWorkoutProgramsSummary(Number(userId));
       setWorkoutPlans(plans);
     } catch (error) {
       console.error('Error loading plans from backend:', error);
@@ -87,12 +87,12 @@ const HomeScreen = ({ navigation }: any) => {
           <View style={homeStyles.titleUnderline} />
         </View>
 
-        {/* Botão Treino Rápido */}
+        {/* Botão Treino Inteligente */}
         <TouchableOpacity 
-          style={homeStyles.quickWorkoutButton}
-          onPress={() => navigation.navigate('QuickWorkout')}
+          style={homeStyles.smartWorkoutButton}
+          onPress={() => navigation.navigate('IntelligentWorkout')}
         >
-          <Text style={homeStyles.quickWorkoutText}>TREINO RÁPIDO</Text>
+          <Text style={homeStyles.smartWorkoutText}>CRIAR TREINO INTELIGENTE</Text>
         </TouchableOpacity>
 
         {/* Programas de Treino */}
@@ -124,21 +124,13 @@ const HomeScreen = ({ navigation }: any) => {
                   </View>
                   <Text style={homeStyles.programDescription}>{plan.description}</Text>
                   <View style={homeStyles.programFooter}>
-                    <Text style={homeStyles.programDays}>{plan.days.length} dias</Text>
+                    <Text style={homeStyles.programDays}>Toque para ver os treinos</Text>
                   </View>
                 </TouchableOpacity>
               ))}
             </View>
           )}
         </View>
-
-        {/* Botão Treino Inteligente */}
-        <TouchableOpacity 
-          style={homeStyles.smartWorkoutButton}
-          onPress={() => navigation.navigate('IntelligentWorkout')}
-        >
-          <Text style={homeStyles.smartWorkoutText}>CRIAR TREINO INTELIGENTE</Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );

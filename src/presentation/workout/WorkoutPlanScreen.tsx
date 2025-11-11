@@ -78,6 +78,7 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
   const [planDetails, setPlanDetails] = useState<WorkoutPlan | null>(workoutPlan ?? null);
   const [rawPlan, setRawPlan] = useState<IAPlanResponse | null>(initialRawPlan);
   const [anamnesis, setAnamnesis] = useState<AnamnesePayload | null>(initialAnamnesis);
+  const [isLoadingDays, setIsLoadingDays] = useState(false);
   
   // Estado para controlar o salvamento e evitar múltiplos cliques
   const [isSaving, setIsSaving] = useState(false);
@@ -107,6 +108,33 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
       setAnamnesis(initialAnamnesis);
     }
   }, [workoutPlan, initialRawPlan, initialAnamnesis]);
+
+  useEffect(() => {
+    const fetchPersistedDays = async () => {
+      if (!fromHome) return;
+      if (!planDetails) return;
+      if (planDetails.days && planDetails.days.length > 0) return;
+
+      const userId = await userService.getCurrentUserId();
+      if (!userId) return;
+
+      setIsLoadingDays(true);
+      try {
+        const programId = Number(planDetails.id);
+        if (!Number.isFinite(programId)) {
+          return;
+        }
+        const days = await fetchProgramWorkouts(Number(userId), programId);
+        setPlanDetails((prev) => (prev ? { ...prev, days } : prev));
+      } catch (error) {
+        console.warn('Erro ao carregar treinos do programa:', error);
+      } finally {
+        setIsLoadingDays(false);
+      }
+    };
+
+    fetchPersistedDays();
+  }, [fromHome, planDetails?.id, planDetails?.days?.length]);
 
   if (!planDetails) {
     return (
@@ -260,6 +288,11 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
   };
 
   const handleDayPress = (dayId: string, routineType: string, dayName: string) => {
+    if (isLoadingDays) {
+      Alert.alert('Carregando', 'Aguarde enquanto carregamos os treinos.');
+      return;
+    }
+
     if (!planDetails) {
       return;
     }
@@ -297,9 +330,16 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
           <Text style={workoutPlanStyles.sectionTitle}>Rotina Semanal</Text>
           
           {planDetails.days.length === 0 ? (
-            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-              <Text style={workoutPlanStyles.infoText}>Nenhum dia de treino encontrado para este programa.</Text>
-            </View>
+            isLoadingDays ? (
+              <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={workoutPlanStyles.infoText}>Carregando treinos do programa...</Text>
+              </View>
+            ) : (
+              <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                <Text style={workoutPlanStyles.infoText}>Nenhum dia de treino encontrado para este programa.</Text>
+              </View>
+            )
           ) : (
             planDetails.days.map((day) => (
               <TouchableOpacity

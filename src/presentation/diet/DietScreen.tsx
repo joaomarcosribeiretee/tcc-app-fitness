@@ -6,22 +6,34 @@ import RejectModal from '../components/ui/RejectModal';
 import { colors } from '../styles/colors';
 import { homeStyles } from '../styles/homeStyles';
 import { DietPlan } from '../../domain/entities/DietPlan';
-import { loadDietPlans } from '../../infra/dietPlanStorage';
 import * as secure from '../../infra/secureStore';
+import { fetchUserDietPlansSummary } from '../../services/dietPlanService';
+import userService from '../../infra/userService';
 
 const DietScreen = ({ navigation }: any) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [dietPlans, setDietPlans] = useState<DietPlan[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Carrega os planos salvos quando a tela recebe foco
   useFocusEffect(
     useCallback(() => {
       const loadPlans = async () => {
         try {
-          const plans = await loadDietPlans();
+          setIsLoading(true);
+          const userId = await userService.getCurrentUserId();
+          if (!userId) {
+            setDietPlans([]);
+            return;
+          }
+
+          const plans = await fetchUserDietPlansSummary(Number(userId));
           setDietPlans(plans);
         } catch (error) {
           console.error('Error loading diet plans:', error);
+          setDietPlans([]);
+        } finally {
+          setIsLoading(false);
         }
       };
       loadPlans();
@@ -90,7 +102,11 @@ const DietScreen = ({ navigation }: any) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Minhas Dietas</Text>
           
-          {dietPlans.length === 0 ? (
+          {isLoading ? (
+            <View style={styles.programsContainer}>
+              <Text style={styles.emptyText}>Carregando dietas...</Text>
+            </View>
+          ) : dietPlans.length === 0 ? (
             <View style={styles.programsContainer}>
               <Text style={styles.emptyText}>Nenhuma dieta criada ainda</Text>
               <Text style={styles.emptySubtext}>Crie sua primeira dieta inteligente</Text>
@@ -110,8 +126,10 @@ const DietScreen = ({ navigation }: any) => {
                   </View>
                   <Text style={styles.programDescription}>{plan.description}</Text>
                   <View style={styles.programFooter}>
-                    <Text style={styles.programDays}>{plan.totalDailyCalories} kcal/dia</Text>
-                    <Text style={styles.programDays}>{plan.meals.length} refeições</Text>
+                    <Text style={styles.programDays}>
+                      {plan.totalDailyCalories ? `${plan.totalDailyCalories} kcal/dia` : 'Calorias a definir'}
+                    </Text>
+                    <Text style={styles.programDays}>Toque para ver as refeições</Text>
                   </View>
                 </TouchableOpacity>
               ))}

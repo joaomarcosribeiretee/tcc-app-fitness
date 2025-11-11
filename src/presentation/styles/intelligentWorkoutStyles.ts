@@ -173,10 +173,16 @@ export const intelligentWorkoutStyles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
   },
+  submitButtonDisabled: {
+    opacity: 0.6,
+  },
   submitButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  asterisk: {
+    color: '#D32F2F',
   },
   // Modal styles (same as home)
   modalOverlay: {

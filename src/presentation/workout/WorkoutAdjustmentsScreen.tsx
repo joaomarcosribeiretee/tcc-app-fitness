@@ -102,14 +102,16 @@ const WorkoutAdjustmentsScreen = ({ navigation, route }: WorkoutAdjustmentsScree
     try {
       setIsSubmitting(true);
       setLoadingStep(1);
+      setLoadingStep(2);
 
-      const { workoutPlan: updatedPlan, rawPlan: updatedRawPlan } = await requestWorkoutPlanAdjustments({
+      // Enviando solicitação para ajustes
+      const { workoutPlan: adjustedPlan, rawPlan: adjustedRawPlan } = await requestWorkoutPlanAdjustments({
         anamnesis,
         currentPlan: rawPlan,
-        adjustments: adjustmentText.trim(),
+        adjustments: adjustmentText,
       });
 
-      setLoadingStep(2);
+      setLoadingStep(3);
 
       setIsSubmitting(false);
       setLoadingStep(0);
@@ -117,8 +119,8 @@ const WorkoutAdjustmentsScreen = ({ navigation, route }: WorkoutAdjustmentsScree
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       navigation.replace('WorkoutPlan', {
-        workoutPlan: updatedPlan,
-        rawPlan: updatedRawPlan,
+        workoutPlan: adjustedPlan,
+        rawPlan: adjustedRawPlan,
         anamnesis,
         fromHome: false,
       });

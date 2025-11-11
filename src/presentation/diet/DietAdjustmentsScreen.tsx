@@ -14,7 +14,11 @@ import LoadingModal from '../components/ui/LoadingModal';
 import RejectModal from '../components/ui/RejectModal';
 import { workoutAdjustmentsStyles } from '../styles/adjustmentsStyles';
 import { DietPlan } from '../../domain/entities/DietPlan';
-import { generateMockDietPlan } from '../../domain/entities/DietPlan';
+import {
+  DietAnamnesisPayload,
+  IADietPlanResponse,
+  requestDietPlanAdjustments,
+} from '../../services/dietPlanService';
 import * as secure from '../../infra/secureStore';
 
 interface DietAdjustmentsScreenProps {
@@ -22,12 +26,16 @@ interface DietAdjustmentsScreenProps {
   route: {
     params?: {
       dietPlan?: DietPlan;
+      rawPlan?: IADietPlanResponse;
+      anamnesis?: DietAnamnesisPayload;
     };
   };
 }
 
 const DietAdjustmentsScreen = ({ navigation, route }: DietAdjustmentsScreenProps) => {
   const originalDietPlan = route.params?.dietPlan;
+  const rawPlan = route.params?.rawPlan;
+  const anamnesis = route.params?.anamnesis;
   const [adjustmentText, setAdjustmentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -83,53 +91,39 @@ const DietAdjustmentsScreen = ({ navigation, route }: DietAdjustmentsScreenProps
       return;
     }
 
+    if (!anamnesis || !rawPlan) {
+      Alert.alert('Erro', 'Não foi possível recuperar os dados completos do plano. Gere uma nova dieta.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setLoadingStep(1);
-      
-      // Simular envio para a IA (futuramente será uma API real)
-      console.log('Solicitação de alteração:', {
-        planId: originalDietPlan.id,
-        planName: originalDietPlan.name,
-        adjustments: adjustmentText.trim()
+
+      const { dietPlan: updatedPlan, rawPlan: updatedRawPlan } = await requestDietPlanAdjustments({
+        anamnesis,
+        currentPlan: rawPlan,
+        adjustments: adjustmentText,
       });
-      
-      // Etapa 1: Enviando solicitação (1 segundo)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setLoadingStep(2);
-      
-      // Etapa 2: Processando com IA (2 segundos)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+
       setLoadingStep(3);
-      
-      // Simular geração de novo plano
-      const newDietPlan = generateMockDietPlan();
-      newDietPlan.id = `diet-plan-${Date.now()}`;
-      newDietPlan.name = `${originalDietPlan.name} (Atualizado)`;
-      
-      // Esconder o loading antes da navegação
       setIsSubmitting(false);
       setLoadingStep(0);
-      
-      // Pequeno delay para garantir transição suave
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Navegar de volta para a tela de aceitar/recusar o novo plano
+
       navigation.replace('DietPlan', {
-        dietPlan: newDietPlan,
-        fromHome: false
+        dietPlan: updatedPlan,
+        rawPlan: updatedRawPlan,
+        anamnesis,
+        fromHome: false,
       });
-      
     } catch (error) {
       console.error('Error submitting adjustments:', error);
       setIsSubmitting(false);
       setLoadingStep(0);
-      Alert.alert(
-        'Erro',
-        'Não foi possível processar sua solicitação. Tente novamente.'
-      );
+      const message = error instanceof Error ? error.message : 'Não foi possível processar sua solicitação. Tente novamente.';
+      Alert.alert('Erro', message);
     }
-  }, [adjustmentText, originalDietPlan, navigation]);
+  }, [adjustmentText, originalDietPlan, navigation, anamnesis, rawPlan]);
 
   const handleCancel = useCallback(() => {
     if (adjustmentText.trim()) {

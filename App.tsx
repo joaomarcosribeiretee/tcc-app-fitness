@@ -19,7 +19,6 @@ import WorkoutAdjustmentsScreen from "./src/presentation/workout/WorkoutAdjustme
 import WorkoutExecutionScreen from "./src/presentation/workout/WorkoutExecutionScreen";
 import WorkoutSummaryScreen from "./src/presentation/workout/WorkoutSummaryScreen";
 import WorkoutDetailsScreen from "./src/presentation/workout/WorkoutDetailsScreen";
-import QuickWorkoutScreen from "./src/presentation/workout/QuickWorkoutScreen";
 import { TabIcon, bottomTabBarStyles } from "./src/presentation/components/layout/BottomTabBar";
 import { appHeaderOptions } from "./src/presentation/styles/appStyles";
 import { useAppFonts } from "./src/presentation/styles/fonts";
@@ -188,13 +187,6 @@ export default function App() {
         <Stack.Screen 
           name="WorkoutDetails" 
           component={WorkoutDetailsScreen as any} 
-          options={{ 
-            headerShown: false,
-          }} 
-        />
-        <Stack.Screen 
-          name="QuickWorkout" 
-          component={QuickWorkoutScreen} 
           options={{ 
             headerShown: false,
           }} 

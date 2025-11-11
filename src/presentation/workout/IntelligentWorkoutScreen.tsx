@@ -13,6 +13,7 @@ import {
   UIManager
 } from 'react-native';
 import { AppHeader } from '../components/layout/AppHeader';
+import InfoModal from '../components/ui/InfoModal';
 import RejectModal from '../components/ui/RejectModal';
 import LoadingModal from '../components/ui/LoadingModal';
 import { intelligentWorkoutStyles } from '../styles/intelligentWorkoutStyles';
@@ -48,6 +49,7 @@ interface SelectorProps {
   options: string[];
   multiple?: boolean;
   placeholder: string;
+  errorMessage?: string;
 }
 
 const IntelligentWorkoutScreen = ({ navigation }: any) => {
@@ -66,8 +68,9 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
     exerciciosNaoGosta: '',
     equipamentosExtras: ''
   });
-
+  const [errors] = useState<Record<string, string>>({});
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showIntroModal, setShowIntroModal] = useState(true);
   const [openSelector, setOpenSelector] = useState<keyof FormData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -166,10 +169,14 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
   ], []);
   const diasSemanaOptions = useMemo(() => ['1 dia', '2 dias', '3 dias', '4 dias', '5 dias', '6 dias'], []);
   const tempoPorTreinoOptions = useMemo(() => [
-    '30 minutos a 1 hora',
-    '1 hora a 1 hora e 30 minutos',
-    '1 hora e 30 minutos a 2 horas',
-    'Mais de 2 horas'
+    'Até 30 minutos',
+    '30 a 45 minutos',
+    '45 a 60 minutos',
+    '60 a 75 minutos',
+    '75 a 90 minutos',
+    '90 a 105 minutos',
+    '105 a 120 minutos',
+    'Mais de 120 minutos'
   ], []);
   const objetivosOptions = useMemo(() => [
     'Ganhar massa muscular',
@@ -179,6 +186,24 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
     'Aumentar força',
     'Melhorar flexibilidade'
   ], []);
+
+  const isFormValid = useMemo(() => {
+    const idadeValue = Number(formData.idade);
+    const pesoValue = Number(formData.peso);
+
+    return (
+      formData.idade.trim().length > 0 &&
+      Number.isFinite(idadeValue) && idadeValue >= 12 &&
+      formData.sexo.trim().length > 0 &&
+      formData.peso.trim().length > 0 &&
+      Number.isFinite(pesoValue) && pesoValue > 0 &&
+      formData.experiencia.trim().length > 0 &&
+      formData.tempoTreino.trim().length > 0 &&
+      formData.diasSemana.trim().length > 0 &&
+      formData.tempoPorTreino.trim().length > 0 &&
+      formData.objetivos.length > 0
+    );
+  }, [formData]);
 
   const buildPayload = useCallback(async (): Promise<AnamnesePayload> => {
     const userId = await userService.getCurrentUserId();
@@ -208,6 +233,10 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
   }, [formData]);
 
   const handleSubmit = useCallback(async () => {
+    if (!isFormValid) {
+      return;
+    }
+
     setIsLoading(true);
     try {
       const payload = await buildPayload();
@@ -219,7 +248,7 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
       const message = error instanceof Error ? error.message : 'Erro desconhecido ao gerar treino';
       Alert.alert('Erro ao gerar treino', message);
     }
-  }, [buildPayload, navigation]);
+  }, [isFormValid, buildPayload, navigation]);
 
   const handleCancel = useCallback(() => {
     navigation.goBack();
@@ -385,6 +414,20 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
         onSettingsPress={handleSettings}
       />
 
+      <InfoModal
+        visible={showIntroModal}
+        title="Treino Inteligente com IA"
+        message="Nosso assistente inteligente vai sugerir um plano de treino baseado nas suas respostas de anamnese."
+        highlights={[
+          'Os exercícios e volumes são recomendados pela IA com base nas informações fornecidas por você.',
+          'Revise com senso crítico: solicite ajustes apenas antes de aceitar o plano; depois de confirmado, não há novo pedido.',
+          'Procure orientação de um profissional de educação física ou médico antes de iniciar um novo programa, especialmente se tiver lesões ou condições clínicas.',
+          'Ao prosseguir, você confirma que as informações são verdadeiras e que entende que esta prescrição não substitui acompanhamento presencial.',
+        ]}
+        confirmText="Entendi, iniciar anamnese"
+        onConfirm={() => setShowIntroModal(false)}
+      />
+
       {/* Modal de Logout */}
       <RejectModal
         visible={showLogoutModal}
@@ -406,6 +449,7 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
       <Animated.ScrollView 
         style={[intelligentWorkoutStyles.content, { opacity: fadeAnim }]} 
         showsVerticalScrollIndicator={false}
+        pointerEvents={showIntroModal ? 'none' : 'auto'}
       >
         {/* Título */}
         <View style={intelligentWorkoutStyles.titleContainer}>
@@ -417,7 +461,7 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
         <View style={intelligentWorkoutStyles.section}>
           <Text style={intelligentWorkoutStyles.sectionTitle}>Informações Básicas</Text>
           
-          <Text style={intelligentWorkoutStyles.questionLabel}>Qual sua idade?</Text>
+          <Text style={intelligentWorkoutStyles.questionLabel}>Qual sua idade? <Text style={intelligentWorkoutStyles.asterisk}>*</Text></Text>
           <TextInput
             style={intelligentWorkoutStyles.input}
             placeholder="Digite sua idade"
@@ -427,14 +471,14 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
             keyboardType="numeric"
           />
 
-          <Text style={intelligentWorkoutStyles.questionLabel}>Qual seu sexo?</Text>
+          <Text style={intelligentWorkoutStyles.questionLabel}>Qual seu sexo? <Text style={intelligentWorkoutStyles.asterisk}>*</Text></Text>
           <Selector
             field="sexo"
             options={sexoOptions}
             placeholder="Selecione seu sexo"
           />
 
-          <Text style={intelligentWorkoutStyles.questionLabel}>Qual seu peso atual (kg)?</Text>
+          <Text style={intelligentWorkoutStyles.questionLabel}>Qual seu peso atual (kg)? <Text style={intelligentWorkoutStyles.asterisk}>*</Text></Text>
           <TextInput
             style={intelligentWorkoutStyles.input}
             placeholder="Digite seu peso"
@@ -450,7 +494,7 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
           <Text style={intelligentWorkoutStyles.sectionTitle}>Nível de Experiência</Text>
           
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Como você classificaria sua experiência com treinos?
+            Como você classificaria sua experiência com treinos? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="experiencia"
@@ -459,7 +503,7 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
           />
 
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Há quanto tempo você treina com regularidade?
+            Há quanto tempo você treina com regularidade? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="tempoTreino"
@@ -473,7 +517,7 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
           <Text style={intelligentWorkoutStyles.sectionTitle}>Frequência e Tempo Disponível</Text>
           
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Quantos dias por semana você tem e quer para treinar?
+            Quantos dias por semana você tem e quer para treinar? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="diasSemana"
@@ -482,7 +526,7 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
           />
 
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Quanto tempo por treino você tem disponível?
+            Quanto tempo por treino você tem disponível? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="tempoPorTreino"
@@ -496,7 +540,7 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
           <Text style={intelligentWorkoutStyles.sectionTitle}>Objetivos</Text>
           
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Quais são os seus objetivos com o treino? (Você pode selecionar mais de um)
+            Quais são os seus objetivos com o treino? (Você pode selecionar mais de um) <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="objetivos"
@@ -591,8 +635,9 @@ const IntelligentWorkoutScreen = ({ navigation }: any) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={intelligentWorkoutStyles.submitButton}
+            style={[intelligentWorkoutStyles.submitButton, (!isFormValid || showIntroModal) && intelligentWorkoutStyles.submitButtonDisabled]}
             onPress={handleSubmit}
+            disabled={!isFormValid || showIntroModal}
           >
             <Text style={intelligentWorkoutStyles.submitButtonText}>Enviar</Text>
           </TouchableOpacity>

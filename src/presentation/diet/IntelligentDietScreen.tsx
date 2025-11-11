@@ -12,10 +12,16 @@ import {
   UIManager
 } from 'react-native';
 import { AppHeader } from '../components/layout/AppHeader';
+import InfoModal from '../components/ui/InfoModal';
 import RejectModal from '../components/ui/RejectModal';
 import LoadingModal from '../components/ui/LoadingModal';
 import { intelligentWorkoutStyles } from '../styles/intelligentWorkoutStyles';
 import * as secure from '../../infra/secureStore';
+import userService from '../../infra/userService';
+import {
+  DietAnamnesisPayload,
+  generateDietPlanFromIA,
+} from '../../services/dietPlanService';
 
 // Habilitar animações de layout no Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -48,8 +54,6 @@ interface FormData {
   alergias: string;
   condicoesMedicas: string;
   suplementosMedicacao: string;
-  temBalança: string;
-  preferenciaMedidas: string;
 }
 
 interface SelectorProps {
@@ -84,12 +88,10 @@ const IntelligentDietScreen = ({ navigation }: any) => {
     ondeCome: '',
     alergias: '',
     condicoesMedicas: '',
-    suplementosMedicacao: '',
-    temBalança: '',
-    preferenciaMedidas: ''
+    suplementosMedicacao: ''
   });
-
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showIntroModal, setShowIntroModal] = useState(true);
   const [openSelector, setOpenSelector] = useState<keyof FormData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -117,10 +119,22 @@ const IntelligentDietScreen = ({ navigation }: any) => {
   }, [navigation]);
 
   const handleInputChange = useCallback(<K extends keyof FormData>(field: K, value: FormData[K]) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => {
+      const updated: FormData = {
+        ...prev,
+        [field]: value
+      };
+
+      if (field === 'comeFora' && value !== 'Sim') {
+        updated.vezesForaSemana = '';
+      }
+
+      if (field === 'tipoAlimentacao' && value !== 'Outra') {
+        updated.tipoAlimentacaoOutra = '';
+      }
+
+      return updated;
+    });
   }, []);
 
   const handleNumericChange = useCallback((field: 'idade' | 'altura' | 'pesoAtual' | 'pesoObjetivo' | 'vezesForaSemana' | 'refeicoesPorDia', value: string) => {
@@ -145,7 +159,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
     closeSelector();
   }, [handleInputChange, closeSelector]);
 
-  const sexoOptions = useMemo(() => ['Masculino', 'Feminino', 'Outro', 'Prefiro não informar'], []);
+  const sexoOptions = useMemo(() => ['Masculino', 'Feminino'], []);
   const objetivoDietaOptions = useMemo(() => [
     'Emagrecimento',
     'Ganho de massa muscular',
@@ -159,10 +173,11 @@ const IntelligentDietScreen = ({ navigation }: any) => {
     'Bastante controlada'
   ], []);
   const orcamentoOptions = useMemo(() => [
-    'Até R$400 (baixo)',
-    'R$400 – R$1000 (moderado)',
-    'R$1000 – R$2000 (intermediário)',
-    'Acima de R$2000 (livre)'
+    'Até R$300 (orçamento restrito)',
+    'R$300 – R$600 (perfil econômico)',
+    'R$600 – R$1.000 (faixa moderada)',
+    'R$1.000 – R$1.500 (faixa confortável)',
+    'Acima de R$1.500 (orçamento flexível)'
   ], []);
   const simNaoOptions = useMemo(() => ['Sim', 'Não'], []);
   const tipoAlimentacaoOptions = useMemo(() => [
@@ -180,51 +195,108 @@ const IntelligentDietScreen = ({ navigation }: any) => {
     'No trabalho/faculdade',
     'Fora (restaurantes, marmita, etc.)'
   ], []);
-  const preferenciaMedidasOptions = useMemo(() => [
-    'Gramas',
-    'Porções caseiras (colher, copo, etc.)'
-  ], []);
+
+  const yesNoToBool = useCallback((value: string) => {
+    return value?.trim().toLowerCase() === 'sim';
+  }, []);
+
+  const buildPayload = useCallback(async (): Promise<DietAnamnesisPayload> => {
+    const userId = await userService.getCurrentUserId();
+    if (!userId) {
+      throw new Error('Não foi possível identificar o usuário logado. Faça login novamente.');
+    }
+
+    const alturaCm = Number(formData.altura);
+    const alturaMetros = Number.isFinite(alturaCm) && alturaCm > 0 ? alturaCm / 100 : 0;
+
+    const pesoAtual = Number(formData.pesoAtual);
+    const pesoDesejado = Number(formData.pesoObjetivo);
+    const idade = Number(formData.idade);
+    const refeicoes = Number(formData.refeicoesPorDia);
+
+    const tipoAlimentacao = formData.tipoAlimentacao === 'Outra'
+      ? (formData.tipoAlimentacaoOutra?.trim() || 'Personalizada')
+      : (formData.tipoAlimentacao || 'Nenhuma');
+
+    return {
+      usuario_id: Number(userId),
+      sexo: formData.sexo || 'Não informado',
+      idade: Number.isFinite(idade) ? idade : 0,
+      altura: Number.isFinite(alturaMetros) ? Number(alturaMetros.toFixed(2)) : 0,
+      pesoatual: Number.isFinite(pesoAtual) ? pesoAtual : 0,
+      pesodesejado: Number.isFinite(pesoDesejado) ? pesoDesejado : 0,
+      objetivo: formData.objetivoDieta || 'Personalizado',
+      data_meta: formData.dataMeta?.trim() || 'Sem meta definida',
+      avalicao_rotina: formData.rotinaAlimentacao || 'Não informado',
+      orcamento: formData.orcamentoMensal || 'Não informado',
+      alimentos_acessiveis: yesNoToBool(formData.priorizarAcessivel),
+      come_fora: yesNoToBool(formData.comeFora),
+      tipo_alimentacao: tipoAlimentacao,
+      alimentos_gosta: formData.alimentosGosta?.trim() || 'Não informado',
+      alimentos_nao_gosta: formData.alimentosNaoGosta?.trim() || 'Nenhum',
+      qtd_refeicoes: Number.isFinite(refeicoes) ? refeicoes : 0,
+      lanche_entre_refeicoes: yesNoToBool(formData.fazLanches),
+      horario_alimentacao: formData.horariosRefeicoes?.trim() || 'Horários flexíveis',
+      prepara_propria_refeicao: yesNoToBool(formData.preparaRefeicoes),
+      onde_come: formData.ondeCome || 'Não informado',
+      possui_alergias: Boolean(formData.alergias?.trim().length),
+      possui_condicao_medica: formData.condicoesMedicas?.trim() || 'Nenhuma',
+      uso_suplementos: Boolean(formData.suplementosMedicacao?.trim().length),
+    };
+  }, [formData, yesNoToBool]);
+
+  const isFormValid = useMemo(() => {
+    const idadeNumber = Number(formData.idade);
+    const alturaNumber = Number(formData.altura);
+    const pesoAtualNumber = Number(formData.pesoAtual);
+    const pesoObjetivoNumber = Number(formData.pesoObjetivo);
+
+    const comeForaOk =
+      formData.comeFora.trim().length > 0 &&
+      (formData.comeFora !== 'Sim' || (formData.comeFora === 'Sim' && formData.vezesForaSemana.trim().length > 0));
+
+    const tipoAlimentacaoOk =
+      formData.tipoAlimentacao.trim().length > 0 &&
+      (formData.tipoAlimentacao !== 'Outra' || formData.tipoAlimentacaoOutra.trim().length > 0);
+
+    return (
+      formData.sexo.trim().length > 0 &&
+      formData.idade.trim().length > 0 && Number.isFinite(idadeNumber) && idadeNumber > 0 &&
+      formData.altura.trim().length > 0 && Number.isFinite(alturaNumber) && alturaNumber > 0 &&
+      formData.pesoAtual.trim().length > 0 && Number.isFinite(pesoAtualNumber) && pesoAtualNumber > 0 &&
+      formData.pesoObjetivo.trim().length > 0 && Number.isFinite(pesoObjetivoNumber) && pesoObjetivoNumber > 0 &&
+      formData.objetivoDieta.trim().length > 0 &&
+      formData.rotinaAlimentacao.trim().length > 0 &&
+      formData.orcamentoMensal.trim().length > 0 &&
+      formData.priorizarAcessivel.trim().length > 0 &&
+      comeForaOk &&
+      tipoAlimentacaoOk &&
+      formData.refeicoesPorDia.trim().length > 0 &&
+      formData.fazLanches.trim().length > 0 &&
+      formData.preparaRefeicoes.trim().length > 0 &&
+      formData.ondeCome.trim().length > 0
+    );
+  }, [formData]);
 
   const handleSubmit = useCallback(async () => {
-    // Validação removida temporariamente para testes rápidos
-    // if (!formData.sexo || !formData.idade || !formData.altura || !formData.pesoAtual || 
-    //     !formData.pesoObjetivo || !formData.objetivoDieta || !formData.rotinaAlimentacao ||
-    //     !formData.orcamentoMensal || !formData.tipoAlimentacao || !formData.refeicoesPorDia) {
-    //   Alert.alert('Campos obrigatórios', 'Por favor, preencha todos os campos obrigatórios.');
-    //   return;
-    // }
+    if (!isFormValid) {
+      return;
+    }
 
     setIsLoading(true);
     
     try {
-      // TODO: Fazer requisição para a API do backend
-      // const token = await secure.getItem('auth_token');
-      // const response = await fetch('http://SEU_BACKEND/api/dieta-inteligente', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${token}`
-      //   },
-      //   body: JSON.stringify(formData)
-      // });
-      
-      // Simular carregamento (futuramente será a requisição para IA)
-      setTimeout(() => {
-        setIsLoading(false);
-        
-        // Importar e gerar plano mock (futuramente será retornado pela IA)
-        const { generateMockDietPlan } = require('../../domain/entities/DietPlan');
-        const dietPlan = generateMockDietPlan();
-        
-        // Navegar para tela de plano de dieta
-        navigation.navigate('DietPlan', { dietPlan });
-      }, 2000);
+      const payload = await buildPayload();
+      const { dietPlan, rawPlan } = await generateDietPlanFromIA(payload);
+      setIsLoading(false);
+      navigation.navigate('DietPlan', { dietPlan, rawPlan, anamnesis: payload });
     } catch (error) {
       setIsLoading(false);
-      Alert.alert('Erro', 'Não foi possível gerar sua dieta. Tente novamente.');
+      const message = error instanceof Error ? error.message : 'Não foi possível gerar sua dieta. Tente novamente.';
+      Alert.alert('Erro ao gerar dieta', message);
       console.error('Erro ao gerar dieta:', error);
     }
-  }, [formData, navigation]);
+  }, [isFormValid, buildPayload, navigation]);
 
   const handleCancel = useCallback(() => {
     navigation.goBack();
@@ -242,6 +314,9 @@ const IntelligentDietScreen = ({ navigation }: any) => {
 
   const Selector = React.memo(({ field, options, multiple = false, placeholder }: SelectorProps) => {
     const scrollViewRef = useRef<ScrollView>(null);
+    const scrollPositionRef = useRef(0);
+
+    // Memoizar o valor do campo para evitar re-renders
     const fieldValue = useMemo(() => formData[field], [formData, field]);
     
     const displayText = useMemo(() => {
@@ -352,6 +427,20 @@ const IntelligentDietScreen = ({ navigation }: any) => {
         onSettingsPress={handleSettings}
       />
 
+      <InfoModal
+        visible={showIntroModal}
+        title="Dieta Inteligente com IA"
+        message="Nossa IA monta um plano alimentar personalizado com base na sua anamnese. Use-o como ponto de partida seguro."
+        highlights={[
+          'As sugestões levam em conta seus objetivos, rotina e restrições informadas, mas não substituem acompanhamento nutricional presencial.',
+          'Revise cada refeição, ajuste conforme preferências reais e solicite alterações apenas antes de aceitar o plano; após a confirmação não será possível pedir ajustes.',
+          'Verifique intolerâncias, alergias e restrições médicas antes de seguir qualquer recomendação.',
+          'Ao continuar, você confirma que as informações fornecidas são verdadeiras e que buscará um profissional de saúde para avaliações detalhadas quando necessário.',
+        ]}
+        confirmText="Entendi, iniciar anamnese"
+        onConfirm={() => setShowIntroModal(false)}
+      />
+
       <RejectModal
         visible={showLogoutModal}
         title="Sair da conta"
@@ -371,6 +460,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
       <Animated.ScrollView 
         style={[intelligentWorkoutStyles.content, { opacity: fadeAnim }]} 
         showsVerticalScrollIndicator={false}
+        pointerEvents={showIntroModal ? 'none' : 'auto'}
       >
         <View style={intelligentWorkoutStyles.titleContainer}>
           <Text style={intelligentWorkoutStyles.title}>DIETA INTELIGENTE</Text>
@@ -381,14 +471,14 @@ const IntelligentDietScreen = ({ navigation }: any) => {
         <View style={intelligentWorkoutStyles.section}>
           <Text style={intelligentWorkoutStyles.sectionTitle}>Informações Básicas</Text>
           
-          <Text style={intelligentWorkoutStyles.questionLabel}>Qual seu sexo?</Text>
+          <Text style={intelligentWorkoutStyles.questionLabel}>Qual seu sexo? <Text style={intelligentWorkoutStyles.asterisk}>*</Text></Text>
           <Selector
             field="sexo"
             options={sexoOptions}
             placeholder="Selecione seu sexo"
           />
 
-          <Text style={intelligentWorkoutStyles.questionLabel}>Qual sua idade?</Text>
+          <Text style={intelligentWorkoutStyles.questionLabel}>Qual sua idade? <Text style={intelligentWorkoutStyles.asterisk}>*</Text></Text>
           <TextInput
             style={intelligentWorkoutStyles.input}
             placeholder="Digite sua idade"
@@ -398,7 +488,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
             keyboardType="numeric"
           />
 
-          <Text style={intelligentWorkoutStyles.questionLabel}>Qual sua altura (cm)?</Text>
+          <Text style={intelligentWorkoutStyles.questionLabel}>Qual sua altura (cm)? <Text style={intelligentWorkoutStyles.asterisk}>*</Text></Text>
           <TextInput
             style={intelligentWorkoutStyles.input}
             placeholder="Ex: 175"
@@ -408,7 +498,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
             keyboardType="numeric"
           />
 
-          <Text style={intelligentWorkoutStyles.questionLabel}>Qual seu peso atual (kg)?</Text>
+          <Text style={intelligentWorkoutStyles.questionLabel}>Qual seu peso atual (kg)? <Text style={intelligentWorkoutStyles.asterisk}>*</Text></Text>
           <TextInput
             style={intelligentWorkoutStyles.input}
             placeholder="Ex: 75.5"
@@ -418,7 +508,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
             keyboardType="decimal-pad"
           />
 
-          <Text style={intelligentWorkoutStyles.questionLabel}>Qual seu peso objetivo (kg)?</Text>
+          <Text style={intelligentWorkoutStyles.questionLabel}>Qual seu peso objetivo (kg)? <Text style={intelligentWorkoutStyles.asterisk}>*</Text></Text>
           <TextInput
             style={intelligentWorkoutStyles.input}
             placeholder="Ex: 70.0"
@@ -434,7 +524,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           <Text style={intelligentWorkoutStyles.sectionTitle}>Objetivo da Dieta</Text>
           
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Qual seu principal objetivo com a dieta?
+            Qual seu principal objetivo com a dieta? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="objetivoDieta"
@@ -454,7 +544,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           />
 
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Como você avalia sua rotina atual de alimentação?
+            Como você avalia sua rotina atual de alimentação? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="rotinaAlimentacao"
@@ -468,7 +558,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           <Text style={intelligentWorkoutStyles.sectionTitle}>Orçamento Alimentar</Text>
           
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Qual seu orçamento mensal aproximado para alimentação?
+            Qual seu orçamento mensal aproximado para alimentação? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="orcamentoMensal"
@@ -477,7 +567,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           />
 
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Deseja que a IA priorize alimentos mais acessíveis dentro do plano?
+            Deseja que a IA priorize alimentos mais acessíveis dentro do plano? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="priorizarAcessivel"
@@ -486,7 +576,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           />
 
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Costuma comer fora de casa?
+            Costuma comer fora de casa? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="comeFora"
@@ -497,7 +587,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           {formData.comeFora === 'Sim' && (
             <>
               <Text style={intelligentWorkoutStyles.questionLabel}>
-                Se sim: quantas vezes por semana, em média? (opcional)
+                Se sim: quantas vezes por semana, em média? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
               </Text>
               <TextInput
                 style={intelligentWorkoutStyles.input}
@@ -516,7 +606,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           <Text style={intelligentWorkoutStyles.sectionTitle}>Preferências Alimentares</Text>
           
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Você segue algum tipo de alimentação específica?
+            Você segue algum tipo de alimentação específica? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="tipoAlimentacao"
@@ -527,7 +617,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           {formData.tipoAlimentacao === 'Outra' && (
             <>
               <Text style={intelligentWorkoutStyles.questionLabel}>
-                Especifique o tipo de alimentação:
+                Especifique o tipo de alimentação: <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
               </Text>
               <TextInput
                 style={intelligentWorkoutStyles.input}
@@ -571,7 +661,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           <Text style={intelligentWorkoutStyles.sectionTitle}>Rotina e Hábitos</Text>
           
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Quantas refeições principais você faz por dia?
+            Quantas refeições principais você faz por dia? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="refeicoesPorDia"
@@ -580,7 +670,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           />
 
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Você costuma fazer lanches entre as refeições?
+            Você costuma fazer lanches entre as refeições? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="fazLanches"
@@ -600,7 +690,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           />
 
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Você prepara suas próprias refeições?
+            Você prepara suas próprias refeições? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="preparaRefeicoes"
@@ -609,7 +699,7 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           />
 
           <Text style={intelligentWorkoutStyles.questionLabel}>
-            Onde costuma se alimentar durante o dia?
+            Onde costuma se alimentar durante o dia? <Text style={intelligentWorkoutStyles.asterisk}>*</Text>
           </Text>
           <Selector
             field="ondeCome"
@@ -662,29 +752,6 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           />
         </View>
 
-        {/* Disponibilidade e Equipamentos */}
-        <View style={intelligentWorkoutStyles.section}>
-          <Text style={intelligentWorkoutStyles.sectionTitle}>Disponibilidade e Equipamentos</Text>
-          
-          <Text style={intelligentWorkoutStyles.questionLabel}>
-            Possui balança de cozinha para pesar alimentos?
-          </Text>
-          <Selector
-            field="temBalança"
-            options={simNaoOptions}
-            placeholder="Selecione"
-          />
-
-          <Text style={intelligentWorkoutStyles.questionLabel}>
-            Deseja receber medidas em gramas ou em porções caseiras?
-          </Text>
-          <Selector
-            field="preferenciaMedidas"
-            options={preferenciaMedidasOptions}
-            placeholder="Selecione a preferência"
-          />
-        </View>
-
         {/* Botões */}
         <View style={intelligentWorkoutStyles.buttonContainer}>
           <TouchableOpacity
@@ -695,8 +762,9 @@ const IntelligentDietScreen = ({ navigation }: any) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={intelligentWorkoutStyles.submitButton}
+            style={[intelligentWorkoutStyles.submitButton, (!isFormValid || showIntroModal) && intelligentWorkoutStyles.submitButtonDisabled]}
             onPress={handleSubmit}
+            disabled={!isFormValid || showIntroModal}
           >
             <Text style={intelligentWorkoutStyles.submitButtonText}>Enviar</Text>
           </TouchableOpacity>

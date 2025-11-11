@@ -1,37 +1,90 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { AppHeader } from '../components/layout/AppHeader';
 import SuccessModal from '../components/ui/SuccessModal';
 import RejectModal from '../components/ui/RejectModal';
 import { workoutPlanStyles } from '../styles/workoutPlanStyles';
 import { DietPlan, Meal, Food } from '../../domain/entities/DietPlan';
-import { addDietPlan } from '../../infra/dietPlanStorage';
 import * as secure from '../../infra/secureStore';
+import {
+  confirmDietPlan,
+  IADietPlanResponse,
+  DietAnamnesisPayload,
+  fetchDietMeals,
+} from '../../services/dietPlanService';
 
 interface DietPlanScreenProps {
   navigation: any;
   route: {
     params?: {
       dietPlan?: DietPlan;
+      rawPlan?: IADietPlanResponse;
+      anamnesis?: DietAnamnesisPayload;
       fromHome?: boolean;
     };
   };
 }
 
 const DietPlanScreen = ({ navigation, route }: DietPlanScreenProps) => {
-  const dietPlan = route.params?.dietPlan;
+  const initialDietPlan = route.params?.dietPlan ?? null;
+  const initialRawPlan = route.params?.rawPlan ?? null;
+  const initialAnamnesis = route.params?.anamnesis ?? null;
   const fromHome = route.params?.fromHome || false;
   
+  const [planDetails, setPlanDetails] = useState<DietPlan | null>(initialDietPlan);
+  const [rawPlan, setRawPlan] = useState<IADietPlanResponse | null>(initialRawPlan);
+  const [anamnesis, setAnamnesis] = useState<DietAnamnesisPayload | null>(initialAnamnesis);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoadingMeals, setIsLoadingMeals] = useState(false);
 
   const handleSettingsPress = useCallback(() => {
     setShowLogoutModal(true);
   }, []);
 
-  if (!dietPlan) {
+  useEffect(() => {
+    setPlanDetails(initialDietPlan);
+    setRawPlan(initialRawPlan);
+    setAnamnesis(initialAnamnesis);
+  }, [initialDietPlan, initialRawPlan, initialAnamnesis]);
+
+  useEffect(() => {
+    const loadMeals = async () => {
+      if (!fromHome) return;
+      if (!planDetails) return;
+      if (planDetails.meals && planDetails.meals.length > 0) return;
+
+      const dietId = Number(planDetails.id);
+      if (!Number.isFinite(dietId)) {
+        return;
+      }
+
+      setIsLoadingMeals(true);
+      try {
+        const meals = await fetchDietMeals(dietId);
+        const totalFromMeals = meals.reduce((acc, meal) => acc + (meal.totalCalories || 0), 0);
+        setPlanDetails((prev) =>
+          prev
+            ? {
+                ...prev,
+                meals,
+                totalDailyCalories: prev.totalDailyCalories || totalFromMeals,
+              }
+            : prev
+        );
+      } catch (error) {
+        console.warn('Erro ao carregar refeições da dieta:', error);
+      } finally {
+        setIsLoadingMeals(false);
+      }
+    };
+
+    loadMeals();
+  }, [fromHome, planDetails?.id, planDetails?.meals?.length]);
+
+  if (!planDetails) {
     return (
       <View style={workoutPlanStyles.container}>
         <AppHeader 
@@ -54,16 +107,20 @@ const DietPlanScreen = ({ navigation, route }: DietPlanScreenProps) => {
       return;
     }
     
-    if (!dietPlan) {
+    if (!planDetails) {
       Alert.alert('Erro', 'Plano de dieta não encontrado');
       return;
     }
     
     try {
       setIsSaving(true);
-      console.log('Saving diet plan:', dietPlan.name);
+      console.log('Saving diet plan:', planDetails.name);
       
-      await addDietPlan(dietPlan);
+      if (!rawPlan) {
+        throw new Error('Plano original não disponível para confirmação. Gere novamente a dieta.');
+      }
+
+      await confirmDietPlan(rawPlan);
       
       setIsSaving(false);
       setShowSuccessModal(true);
@@ -76,7 +133,7 @@ const DietPlanScreen = ({ navigation, route }: DietPlanScreenProps) => {
         `Não foi possível salvar a dieta: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
       );
     }
-  }, [isSaving, dietPlan, navigation]);
+  }, [isSaving, planDetails, navigation, rawPlan]);
 
   const handleSuccessModalClose = useCallback(() => {
     setShowSuccessModal(false);
@@ -130,7 +187,11 @@ const DietPlanScreen = ({ navigation, route }: DietPlanScreenProps) => {
   }, []);
 
   const handleRequestChanges = () => {
-    navigation.navigate('DietAdjustments', { dietPlan });
+    if (!planDetails || !rawPlan || !anamnesis) {
+      Alert.alert('Recurso indisponível', 'Não foi possível recuperar os dados necessários. Gere a dieta novamente.');
+      return;
+    }
+    navigation.navigate('DietAdjustments', { dietPlan: planDetails, rawPlan, anamnesis });
   };
 
   const renderMeal = (meal: Meal) => {
@@ -164,13 +225,17 @@ const DietPlanScreen = ({ navigation, route }: DietPlanScreenProps) => {
                 <Text style={{ fontSize: 15, color: '#FFFFFF', fontWeight: '500', marginBottom: 4 }}>
                   {food.name}
                 </Text>
-                <Text style={{ fontSize: 13, color: '#787F84' }}>
-                  {food.quantity}
-                </Text>
+                {food.quantity && (
+                  <Text style={{ fontSize: 13, color: '#787F84' }}>
+                    {food.quantity}
+                  </Text>
+                )}
               </View>
-              <Text style={{ fontSize: 14, color: '#787F84', fontWeight: '600', minWidth: 60, textAlign: 'right' }}>
-                {food.calories} kcal
-              </Text>
+              {typeof food.calories === 'number' && food.calories > 0 && (
+                <Text style={{ fontSize: 14, color: '#787F84', fontWeight: '600', minWidth: 60, textAlign: 'right' }}>
+                  {food.calories} kcal
+                </Text>
+              )}
             </View>
           ))}
         </View>
@@ -186,18 +251,24 @@ const DietPlanScreen = ({ navigation, route }: DietPlanScreenProps) => {
         {/* Cabeçalho do Plano */}
         <View style={workoutPlanStyles.header}>
           <Text style={workoutPlanStyles.badge}>Dieta criada</Text>
-          <Text style={workoutPlanStyles.planName}>{dietPlan.name}</Text>
-          <Text style={workoutPlanStyles.planDescription}>{dietPlan.description}</Text>
+          <Text style={workoutPlanStyles.planName}>{planDetails.name}</Text>
+          <Text style={workoutPlanStyles.planDescription}>{planDetails.description}</Text>
           <Text style={[workoutPlanStyles.planDescription, { marginTop: 8, fontWeight: '600' }]}>
-            Total diário: {dietPlan.totalDailyCalories} kcal
+            Total diário: {planDetails.totalDailyCalories} kcal
           </Text>
         </View>
 
         {/* Lista de Refeições */}
         <View style={workoutPlanStyles.daysSection}>
           <Text style={workoutPlanStyles.sectionTitle}>Refeições diárias</Text>
-          
-          {dietPlan.meals.map((meal) => renderMeal(meal))}
+          {isLoadingMeals && (!planDetails.meals || planDetails.meals.length === 0) ? (
+            <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+              <Text style={workoutPlanStyles.infoText}>Carregando refeições...</Text>
+            </View>
+          ) : (
+            (planDetails.meals ?? []).map((meal) => renderMeal(meal))
+          )}
         </View>
 
         {/* Info adicional */}

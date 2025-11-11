@@ -36,22 +36,6 @@ export const homeStyles = StyleSheet.create({
     color: '#787F84',
     marginBottom: 16,
   },
-  quickWorkoutButton: {
-    backgroundColor: colors.accent,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    alignSelf: 'center',
-    width: '100%',
-    marginTop: 8,
-    marginBottom: 24,
-  },
-  quickWorkoutText: {
-    color: colors.buttonText,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   programsContainer: {
     backgroundColor: colors.surface,
     borderRadius: 12,

@@ -20,7 +20,9 @@ export interface AnamnesePayload {
 }
 
 interface IAPlanExercise {
-  idExercicio: number;
+  nomeExercicio: string;
+  equipamento: string;
+  grupoMuscular: string;
   series: number;
   repeticoes: number;
   descansoSegundos: number;
@@ -78,24 +80,12 @@ interface BackendTreinoPrograma {
 
 interface BackendTreinoExercise {
   id_ex_treino: number;
-  nome: string | null;
+  nome_exercicio: string | null;
   grupo_muscular: string | null;
   equipamento: string | null;
   descanso: number | null;
   series: number | null;
   reps: number | null;
-}
-
-interface BackendExerciseCatalog {
-  id_exercicio: number;
-  nome: string | null;
-  descricao: string | null;
-  grupo_muscular: string | null;
-  equipamento: string | null;
-}
-
-interface ExerciseCatalogResponse {
-  exercicios: BackendExerciseCatalog[];
 }
 
 const toRoutineType = (value?: string | null): RoutineType => {
@@ -113,34 +103,37 @@ const toRoutineType = (value?: string | null): RoutineType => {
   return 'fullbody';
 };
 
-const mapExercises = (
-  exercises: IAPlanExercise[] | undefined,
-  catalog: Record<number, BackendExerciseCatalog> | undefined
-): Exercise[] => {
+const mapExercises = (exercises: IAPlanExercise[] | undefined): Exercise[] => {
   if (!exercises || exercises.length === 0) {
     return [];
   }
 
-  return exercises.map((exercise) => {
-    const catalogInfo = catalog?.[exercise.idExercicio];
+  return exercises.map((exercise, index) => {
+    const name = (exercise.nomeExercicio || '').trim();
+    const muscle = (exercise.grupoMuscular || '').trim();
+    const equipment = (exercise.equipamento || '').trim();
+    const setsNumber = Number(exercise.series);
+    const repsNumber = Number(exercise.repeticoes);
+    const restNumber = Number(exercise.descansoSegundos);
+
+    const sets = Number.isFinite(setsNumber) && setsNumber > 0 ? setsNumber : undefined;
+    const repsValue = Number.isFinite(repsNumber) && repsNumber > 0 ? repsNumber : undefined;
+    const restSeconds = Number.isFinite(restNumber) && restNumber > 0 ? restNumber : undefined;
 
     return {
-      id: String(exercise.idExercicio),
-      name: catalogInfo?.nome || `Exercício ${exercise.idExercicio}`,
-      bodyPart: catalogInfo?.grupo_muscular || 'Personalizado',
-      target: catalogInfo?.grupo_muscular || 'Personalizado',
-      equipment: catalogInfo?.equipamento || 'A definir',
-      sets: exercise.series,
-      reps: String(exercise.repeticoes),
-      rest: `${exercise.descansoSegundos}s`,
+      id: `ia-${index + 1}`,
+      name: name.length > 0 ? name : `Exercício ${index + 1}`,
+      bodyPart: muscle.length > 0 ? muscle : 'Personalizado',
+      target: muscle.length > 0 ? muscle : 'Personalizado',
+      equipment: equipment.length > 0 ? equipment : 'A definir',
+      sets,
+      reps: repsValue != null ? String(repsValue) : undefined,
+      rest: restSeconds != null ? `${restSeconds}s` : undefined,
     };
   });
 };
 
-const mapTreinos = (
-  treinos: IAPlanTreino[] | undefined,
-  catalog: Record<number, BackendExerciseCatalog> | undefined
-): WorkoutPlanDay[] => {
+const mapTreinos = (treinos: IAPlanTreino[] | undefined): WorkoutPlanDay[] => {
   if (!treinos || treinos.length === 0) {
     return [];
   }
@@ -150,7 +143,7 @@ const mapTreinos = (
     dayNumber: index + 1,
     routineType: toRoutineType(treino.descricao ?? treino.dificuldade ?? treino.nome),
     name: treino.nome || `Treino ${index + 1}`,
-    exercises: mapExercises(treino.exercicios, catalog),
+    exercises: mapExercises(treino.exercicios),
     completed: false,
     description: treino.descricao,
     duration: treino.duracaoMinutos,
@@ -158,10 +151,7 @@ const mapTreinos = (
   }));
 };
 
-const mapToWorkoutPlan = (
-  response: IAPlanResponse,
-  catalog: Record<number, BackendExerciseCatalog> | undefined
-): WorkoutPlan => {
+const mapToWorkoutPlan = (response: IAPlanResponse): WorkoutPlan => {
   const planName = response?.programaTreino?.nomePrograma || 'Treino Personalizado';
   const planDescription = response?.programaTreino?.descricaoPrograma || '';
 
@@ -170,7 +160,7 @@ const mapToWorkoutPlan = (
     name: planName,
     description: planDescription,
     createdAt: new Date(),
-    days: mapTreinos(response?.treinos, catalog),
+    days: mapTreinos(response?.treinos),
   };
 };
 
@@ -197,39 +187,6 @@ const httpGet = async <T>(url: string): Promise<T> => {
   return (await response.json()) as T;
 };
 
-const fetchExerciseCatalog = async (
-  ids: number[]
-): Promise<Record<number, BackendExerciseCatalog>> => {
-  if (!ids.length) {
-    return {};
-  }
-
-  const response = await fetch(`${API_BASE_URL}/api/exercicios/catalogo`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify({ exerciciosIds: ids }),
-  });
-
-  if (!response.ok) {
-    console.warn('Não foi possível carregar o catálogo de exercícios.');
-    return {};
-  }
-
-  const data = (await response.json()) as ExerciseCatalogResponse;
-  const catalog: Record<number, BackendExerciseCatalog> = {};
-
-  for (const item of data.exercicios ?? []) {
-    if (item?.id_exercicio != null) {
-      catalog[item.id_exercicio] = item;
-    }
-  }
-
-  return catalog;
-};
-
 const mapBackendExercises = (exercicios: BackendTreinoExercise[] | undefined): Exercise[] => {
   if (!exercicios) {
     return [];
@@ -237,7 +194,7 @@ const mapBackendExercises = (exercicios: BackendTreinoExercise[] | undefined): E
 
   return exercicios.map((item, index) => ({
     id: String(item.id_ex_treino ?? `${index + 1}`),
-    name: item.nome || `Exercício ${index + 1}`,
+    name: item.nome_exercicio || `Exercício ${index + 1}`,
     bodyPart: item.grupo_muscular || 'Geral',
     target: item.grupo_muscular || 'Personalizado',
     equipment: item.equipamento || 'Corpo Livre',
@@ -331,18 +288,7 @@ export const generateWorkoutPlanFromIA = async (
     }
 
     const data = (await response.json()) as PreviewResponse;
-
-    const uniqueIds = new Set<number>();
-    data.plano?.treinos?.forEach((treino) => {
-      treino?.exercicios?.forEach((ex) => {
-        if (Number.isFinite(ex?.idExercicio)) {
-          uniqueIds.add(Number(ex.idExercicio));
-        }
-      });
-    });
-
-    const catalog = await fetchExerciseCatalog(Array.from(uniqueIds));
-    const workoutPlan = mapToWorkoutPlan(data.plano, catalog);
+    const workoutPlan = mapToWorkoutPlan(data.plano);
     return { workoutPlan, rawPlan: data.plano };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
@@ -386,18 +332,7 @@ export const requestWorkoutPlanAdjustments = async ({
   }
 
   const data = (await response.json()) as PreviewResponse;
-
-  const uniqueIds = new Set<number>();
-  data.plano?.treinos?.forEach((treino) => {
-    treino?.exercicios?.forEach((ex) => {
-      if (Number.isFinite(ex?.idExercicio)) {
-        uniqueIds.add(Number(ex.idExercicio));
-      }
-    });
-  });
-
-  const catalog = await fetchExerciseCatalog(Array.from(uniqueIds));
-  const workoutPlan = mapToWorkoutPlan(data.plano, catalog);
+  const workoutPlan = mapToWorkoutPlan(data.plano);
   return { workoutPlan, rawPlan: data.plano };
 };
 
@@ -478,5 +413,18 @@ export const fetchUserWorkoutPlans = async (userId: number): Promise<WorkoutPlan
   );
 
   const plans = mapBackendProgramas(programas, treinosByProgram);
+  return plans.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+};
+
+export const fetchUserWorkoutProgramsSummary = async (userId: number): Promise<WorkoutPlan[]> => {
+  if (!Number.isFinite(userId)) {
+    throw new Error('ID de usuário inválido');
+  }
+
+  const programas = await httpGet<BackendProgramaTreino[]>(
+    `${API_BASE_URL}/api/programas?userId=${userId}`
+  );
+
+  const plans = mapBackendProgramas(programas, {});
   return plans.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 };

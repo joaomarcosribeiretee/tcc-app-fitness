@@ -15,25 +15,17 @@ import { executionStyles } from '../styles/executionStyles';
 import { WorkoutHistoryService } from '../../infra/workoutHistoryService';
 import type { WorkoutRecord } from '../../infra/workoutHistoryService';
 import UserService from '../../infra/userService';
+import { WorkoutPlan, WorkoutPlanDay } from '../../domain/entities/WorkoutPlan';
 
-interface WorkoutSummaryProps {
-  navigation: any;
-  route: {
-    params: {
-      workoutData: {
-        elapsedTime: number;
-        totalVolume: number;
-        completedSets: number;
-        totalSets: number;
-        exercises: any[];
-        exerciseSets: { [key: string]: any[] };
-        workoutName: string;
-        dayName?: string;
-        isQuickWorkout?: boolean;
-      };
-    };
-  };
+interface WorkoutSummaryParams {
+  workoutPlan?: WorkoutPlan;
+  day?: WorkoutPlanDay;
 }
+
+type WorkoutSummaryProps = {
+  navigation: any;
+  route: { params: { workoutData: any } };
+};
 
 const WorkoutSummaryScreen = ({ navigation, route }: WorkoutSummaryProps) => {
   const { workoutData } = route.params;
@@ -56,7 +48,7 @@ const WorkoutSummaryScreen = ({ navigation, route }: WorkoutSummaryProps) => {
   const getMuscleGroups = useCallback((): string[] => {
     const muscleGroups = new Set<string>();
     if (workoutData.exercises && Array.isArray(workoutData.exercises)) {
-      workoutData.exercises.forEach(exercise => {
+      workoutData.exercises.forEach((exercise: { bodyPart?: string } | null) => {
         if (exercise && exercise.bodyPart && typeof exercise.bodyPart === 'string' && exercise.bodyPart.trim().length > 0) {
           muscleGroups.add(exercise.bodyPart.trim());
         }
@@ -72,7 +64,16 @@ const WorkoutSummaryScreen = ({ navigation, route }: WorkoutSummaryProps) => {
       return [];
     }
     
-    const stats = workoutData.exercises.map(exercise => {
+    const stats = workoutData.exercises.map(
+      (
+        exercise: {
+          id?: string;
+          name?: string;
+          bodyPart?: string;
+          target?: string;
+          equipment?: string;
+        } | null
+      ) => {
       if (!exercise || !exercise.id) {
         return {
           name: 'Exercício não encontrado',
@@ -84,8 +85,8 @@ const WorkoutSummaryScreen = ({ navigation, route }: WorkoutSummaryProps) => {
       }
       
       const sets = workoutData.exerciseSets[exercise.id] || [];
-      const completedSets = sets.filter(set => set.completed).length;
-      const totalWeight = sets.reduce((sum, set) => {
+      const completedSets = sets.filter((set: any) => set.completed).length;
+      const totalWeight = sets.reduce((sum: number, set: any) => {
         if (set.completed && set.weight && set.reps) {
           return sum + (parseFloat(set.weight) || 0) * (parseInt(set.reps) || 0);
         }
@@ -301,7 +302,7 @@ const WorkoutSummaryScreen = ({ navigation, route }: WorkoutSummaryProps) => {
         {/* Resumo dos Exercícios */}
         <View style={executionStyles.section}>
           <Text style={executionStyles.sectionTitle}>Resumo dos Exercícios</Text>
-          {getExerciseStats().map((exercise, index) => (
+          {getExerciseStats().map((exercise: any, index: number) => (
             <View key={index} style={executionStyles.exerciseSummaryCard}>
               <View style={executionStyles.exerciseSummaryHeader}>
                 <Text style={executionStyles.exerciseSummaryName}>{exercise.name}</Text>

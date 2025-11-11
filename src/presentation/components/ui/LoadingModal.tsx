@@ -17,36 +17,31 @@ interface LoadingModalProps {
 }
 
 // Componente do Spinner de Loading
-const LoadingSpinner = () => {
+const LoadingSpinner: React.FC = () => {
   const spinValue = useRef(new Animated.Value(0)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  const startRotation = useCallback(() => {
+  React.useEffect(() => {
     spinValue.setValue(0);
-    
-    const rotateAnimation = Animated.loop(
+    const loop = Animated.loop(
       Animated.timing(spinValue, {
         toValue: 1,
-        duration: 2000, // 2 segundos por volta completa
+        duration: 1600,
         useNativeDriver: true,
         easing: Easing.linear,
       })
     );
-    
-    animationRef.current = rotateAnimation;
-    rotateAnimation.start();
-  }, [spinValue]);
 
-  React.useEffect(() => {
-    startRotation();
+    animationRef.current = loop;
+    loop.start();
 
     return () => {
       if (animationRef.current) {
         animationRef.current.stop();
       }
-      spinValue.setValue(0);
+      spinValue.stopAnimation();
     };
-  }, [startRotation, spinValue]);
+  }, [spinValue]);
 
   const spin = spinValue.interpolate({
     inputRange: [0, 1],

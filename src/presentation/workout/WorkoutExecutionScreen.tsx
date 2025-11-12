@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -14,7 +14,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AppHeader } from '../components/layout/AppHeader';
 import RejectModal from '../components/ui/RejectModal';
 import { executionStyles } from '../styles/executionStyles';
-import { mockWorkouts } from '../../data/mockWorkouts';
 import { RoutineType, Exercise } from '../../domain/entities/Workout';
 import { formatVolume } from '../../utils/formatters';
 
@@ -27,6 +26,11 @@ interface WorkoutExecutionScreenProps {
       planId?: string;
       dayId?: string;
       exercises?: Exercise[]; // Exercícios específicos do plano
+      treinoId?: string | number;
+      workoutName?: string;
+      workoutDescription?: string;
+      workoutDifficulty?: string;
+      workoutDuration?: number | null;
     };
   };
 }
@@ -38,14 +42,30 @@ interface ExerciseSet {
   completed: boolean;
 }
 
+const normalizeLabel = (value?: string | null) =>
+  (value ?? '')
+    .normalize('NFD')
+    .replace(/[^a-zA-Z ]/g, '')
+    .toLowerCase()
+    .trim();
+
 const WorkoutExecutionScreen = ({ navigation, route }: WorkoutExecutionScreenProps) => {
   const routineType: RoutineType = route.params?.routineType || 'upper';
   const dayName = route.params?.dayName;
+  const treinoIdParam = route.params?.treinoId ?? route.params?.dayId;
+  const workoutTitle = route.params?.workoutName || dayName || 'Treino Personalizado';
+  const workoutDescription = route.params?.workoutDescription || 'Treino gerado pela IA';
+  const workoutDifficulty = route.params?.workoutDifficulty || routineType;
+  const workoutDuration = route.params?.workoutDuration ?? null;
   
   // Usar os exercícios passados como parâmetro ou fallback para mockWorkouts
   const passedExercises = route.params?.exercises;
-  const mockWorkout = mockWorkouts[routineType];
-  const exercises = passedExercises || mockWorkout?.exercises || [];
+  const exercises = useMemo(() => {
+    if (passedExercises && Array.isArray(passedExercises)) {
+      return passedExercises.filter(Boolean);
+    }
+    return [];
+  }, [passedExercises]);
   
   // Estado para controlar os sets de cada exercício
   const [exerciseSets, setExerciseSets] = useState<{[key: string]: ExerciseSet[]}>({});
@@ -93,12 +113,14 @@ const WorkoutExecutionScreen = ({ navigation, route }: WorkoutExecutionScreenPro
   }, []);
 
   // ===== FUNÇÕES PARA CÁLCULO DE VOLUME =====
+  const isSetCompleted = useCallback((set: ExerciseSet): boolean => set.completed === true, []);
+
   const calculateTotalVolume = useCallback((): number => {
     let totalVolume = 0;
     
     Object.values(exerciseSets).forEach(sets => {
       sets.forEach(set => {
-        if (set.completed && set.weight && set.reps) {
+        if (isSetCompleted(set)) {
           const weight = parseFloat(set.weight) || 0;
           const reps = parseInt(set.reps) || 0;
           totalVolume += weight * reps;
@@ -107,17 +129,17 @@ const WorkoutExecutionScreen = ({ navigation, route }: WorkoutExecutionScreenPro
     });
     
     return totalVolume;
-  }, [exerciseSets]);
+  }, [exerciseSets, isSetCompleted]);
 
   const calculateCompletedSets = useCallback((): number => {
     let completedSets = 0;
     
     Object.values(exerciseSets).forEach(sets => {
-      completedSets += sets.filter(set => set.completed).length;
+      completedSets += sets.filter(set => isSetCompleted(set)).length;
     });
     
     return completedSets;
-  }, [exerciseSets]);
+  }, [exerciseSets, isSetCompleted]);
 
   const calculateTotalSets = useCallback((): number => {
     let totalSets = 0;
@@ -133,24 +155,13 @@ const WorkoutExecutionScreen = ({ navigation, route }: WorkoutExecutionScreenPro
   
   // Inicializar os sets quando os exercícios mudarem
   React.useEffect(() => {
-    // Debug logs (apenas uma vez por mudança de exercícios)
-    console.log('WorkoutExecutionScreen - useEffect executado, exercises.length:', exercises.length);
-    console.log('WorkoutExecutionScreen - route.params:', route.params);
-    console.log('WorkoutExecutionScreen - routineType:', routineType);
-    console.log('WorkoutExecutionScreen - passedExercises:', passedExercises);
-    console.log('WorkoutExecutionScreen - mockWorkout:', mockWorkout);
-    console.log('WorkoutExecutionScreen - exercises:', exercises);
-    
     if (exercises.length === 0) {
-      console.log('WorkoutExecutionScreen - Nenhum exercício encontrado');
       return;
     }
     
     const sets: {[key: string]: ExerciseSet[]} = {};
     exercises.forEach((exercise) => {
-      // Usar sempre o número de séries do exercício (não usar padrão)
-      const numSets = exercise.sets;
-      console.log(`WorkoutExecutionScreen - Exercício: ${exercise.name}, Séries: ${exercise.sets}, Sets criados: ${numSets}`);
+      const numSets = exercise.sets || 3;
       if (numSets && numSets > 0) {
         sets[exercise.id] = Array.from({ length: numSets }, (_, index) => ({
           id: `${exercise.id}-set-${index + 1}`,
@@ -160,14 +171,11 @@ const WorkoutExecutionScreen = ({ navigation, route }: WorkoutExecutionScreenPro
         }));
       }
     });
-    console.log('WorkoutExecutionScreen - Sets finais criados:', Object.keys(sets).map(key => ({ exerciseId: key, setsCount: sets[key].length })));
     setExerciseSets(sets);
     
     // Iniciar timer automaticamente quando os exercícios são carregados
-    if (!isWorkoutActive) {
-      startWorkoutTimer();
-    }
-  }, [exercises, isWorkoutActive, startWorkoutTimer]);
+    startWorkoutTimer();
+  }, [exercises, startWorkoutTimer]);
 
   // Cleanup do timer quando o componente for desmontado
   useEffect(() => {
@@ -200,22 +208,36 @@ const WorkoutExecutionScreen = ({ navigation, route }: WorkoutExecutionScreenPro
 
   const handleFinishWorkout = () => {
     stopWorkoutTimer();
-    
+
     const totalVolume = calculateTotalVolume();
     const completedSets = calculateCompletedSets();
     const totalSets = calculateTotalSets();
+
+    const treinoId = treinoIdParam != null ? Number(treinoIdParam) : undefined;
+    if (!treinoId || Number.isNaN(treinoId)) {
+      Alert.alert(
+        'Treino não disponível',
+        'Este treino ainda não está salvo no banco. Salve o plano e acesse-o pela tela inicial para registrar suas séries.'
+      );
+      return;
+    }
     
     // Navegar para tela de finalização com os dados do treino
     navigation.navigate('WorkoutSummary', {
       workoutData: {
+        treinoId,
         elapsedTime,
         totalVolume,
         completedSets,
         totalSets,
         exercises,
         exerciseSets,
-        workoutName: mockWorkout?.name || 'Treino Personalizado',
-        dayName
+        workoutName: workoutTitle,
+        dayName,
+        workoutDescription,
+        workoutDifficulty,
+        workoutDuration,
+        workoutStartTimestamp: workoutStartTime ? workoutStartTime.toISOString() : undefined
       }
     });
   };
@@ -273,7 +295,7 @@ const WorkoutExecutionScreen = ({ navigation, route }: WorkoutExecutionScreenPro
   }, []);
 
   const getCompletedSetsCount = (exerciseId: string) => {
-    return exerciseSets[exerciseId]?.filter(set => set.completed).length || 0;
+    return exerciseSets[exerciseId]?.filter(set => isSetCompleted(set)).length || 0;
   };
 
   const getTotalSetsCount = (exerciseId: string) => {
@@ -328,10 +350,10 @@ const WorkoutExecutionScreen = ({ navigation, route }: WorkoutExecutionScreenPro
             <Text style={executionStyles.dayBadge}>{dayName}</Text>
           )}
           <Text style={executionStyles.workoutTitle}>
-            {mockWorkout?.name || 'Treino Personalizado'}
+            {workoutTitle}
           </Text>
           <Text style={executionStyles.workoutDescription}>
-            {mockWorkout?.description || 'Treino gerado pela IA'}
+            {workoutDescription}
           </Text>
         </View>
 
@@ -371,7 +393,16 @@ const WorkoutExecutionScreen = ({ navigation, route }: WorkoutExecutionScreenPro
                 <View style={executionStyles.exerciseInfo}>
                   <Text style={executionStyles.exerciseName}>{exercise.name}</Text>
                   <Text style={executionStyles.exerciseTarget}>
-                    {exercise.bodyPart} • {exercise.target}
+                    {(() => {
+                      const primary = exercise.bodyPart || '';
+                      const secondary = exercise.target || '';
+                      const normalizedPrimary = normalizeLabel(primary);
+                      const normalizedSecondary = normalizeLabel(secondary);
+                      if (secondary && normalizedPrimary !== normalizedSecondary) {
+                        return `${primary} • ${secondary}`;
+                      }
+                      return primary;
+                    })()}
                   </Text>
                 </View>
                 <View style={executionStyles.exerciseProgress}>

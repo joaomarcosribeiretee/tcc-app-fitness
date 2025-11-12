@@ -22,6 +22,18 @@ interface WorkoutDetailsScreenProps {
 const WorkoutDetailsScreen = ({ navigation, route }: WorkoutDetailsScreenProps) => {
   const { workout } = route.params;
 
+  console.log('🔍 WorkoutDetailsScreen >> workout recebido:', workout);
+  workout.exercises?.forEach((exercise, index) => {
+    console.log(`   └─ Exercício [${index}]`, {
+      id: exercise.id,
+      nome: exercise.name,
+      totalSets: exercise.totalSets,
+      completedSets: exercise.completedSets,
+      volume: exercise.volume,
+      sets: exercise.sets,
+    });
+  });
+
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR', {
@@ -97,20 +109,20 @@ const WorkoutDetailsScreen = ({ navigation, route }: WorkoutDetailsScreenProps) 
           </Text>
           
           {workout.exercises?.map((exercise, index) => (
-            <View key={exercise.id || index} style={workoutDetailStyles.exerciseCard}>
-              <View style={workoutDetailStyles.exerciseHeader}>
-                <Text style={workoutDetailStyles.exerciseName}>{exercise.name || 'Exercício'}</Text>
-                <Text style={workoutDetailStyles.exerciseBodyPart}>{exercise.bodyPart || 'N/A'}</Text>
+            <View key={exercise.id || index} style={workoutDetailStyles.historyExerciseCard}>
+              <View style={workoutDetailStyles.historyExerciseHeader}>
+                <Text style={workoutDetailStyles.historyExerciseName}>{exercise.name || 'Exercício'}</Text>
+                <Text style={workoutDetailStyles.historyExerciseBodyPart}>{exercise.bodyPart || 'N/A'}</Text>
               </View>
               
-              <View style={workoutDetailStyles.exerciseStats}>
-                <View style={workoutDetailStyles.exerciseStat}>
-                  <Text style={workoutDetailStyles.exerciseStatValue}>{exercise.completedSets || 0}/{exercise.totalSets || 0}</Text>
-                  <Text style={workoutDetailStyles.exerciseStatLabel}>Sets</Text>
+              <View style={workoutDetailStyles.historyExerciseStats}>
+                <View style={workoutDetailStyles.historyExerciseStat}>
+                  <Text style={workoutDetailStyles.historyExerciseStatValue}>{exercise.completedSets || 0}/{exercise.totalSets || 0}</Text>
+                  <Text style={workoutDetailStyles.historyExerciseStatLabel}>Sets</Text>
                 </View>
-                <View style={workoutDetailStyles.exerciseStat}>
-                  <Text style={workoutDetailStyles.exerciseStatValue}>{formatVolume(exercise.volume || 0)}</Text>
-                  <Text style={workoutDetailStyles.exerciseStatLabel}>Volume</Text>
+                <View style={workoutDetailStyles.historyExerciseStat}>
+                  <Text style={workoutDetailStyles.historyExerciseStatValue}>{formatVolume(exercise.volume || 0)}</Text>
+                  <Text style={workoutDetailStyles.historyExerciseStatLabel}>Volume</Text>
                 </View>
               </View>
               
@@ -156,12 +168,12 @@ const WorkoutDetailsScreen = ({ navigation, route }: WorkoutDetailsScreenProps) 
       </ScrollView>
 
       {/* Botão Voltar */}
-      <View style={workoutDetailStyles.buttonContainer}>
+      <View style={workoutDetailStyles.historyButtonContainer}>
         <TouchableOpacity
-          style={workoutDetailStyles.backButton}
+          style={workoutDetailStyles.historyBackButton}
           onPress={handleBack}
         >
-          <Text style={workoutDetailStyles.backButtonText}>Voltar</Text>
+          <Text style={workoutDetailStyles.historyBackButtonText}>Voltar</Text>
         </TouchableOpacity>
       </View>
     </View>

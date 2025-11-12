@@ -309,7 +309,8 @@ const WorkoutPlanScreen = ({ navigation, route }: WorkoutPlanScreenProps) => {
       planId: planDetails.id,
       dayId: dayId, // Passar o ID do dia específico
       fromHome: fromHome,
-      workoutPlan: planDetails, // Passar o plano atual (ainda não salvo)
+      workoutPlan: planDetails, // Mantém para fluxos que precisam do plano completo
+      dayData: day,
     });
   };
 

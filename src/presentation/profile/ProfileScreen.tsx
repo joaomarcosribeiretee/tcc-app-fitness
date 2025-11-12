@@ -49,7 +49,7 @@ const ProfileScreen = ({ navigation }: any) => {
         console.log('✅ Usuário carregado:', currentUser.username, 'ID:', currentUser.id);
         
         // Carregar treinos do usuário atual com o novo serviço
-        const workoutHistory = await WorkoutHistoryService.getWorkouts(currentUser.id);
+        const workoutHistory = await WorkoutHistoryService.getWorkouts(String(currentUser.id));
         setWorkouts(workoutHistory);
         
         console.log('✅ Treinos carregados:', workoutHistory.length);
@@ -227,21 +227,39 @@ const ProfileScreen = ({ navigation }: any) => {
 
   // Funções de formatação agora importadas de utils/formatters.ts
 
-  // Função para obter o ícone do grupo muscular
+  const normalizeGroupName = (value: string) =>
+    value
+      ?.toLowerCase()
+      .normalize('NFD')
+      .replace(/[^a-z ]/g, '')
+      .trim();
+
   const getMuscleGroupIcon = (muscleName: string) => {
-    const normalized = muscleName.toLowerCase().trim();
-    
-    if (normalized.includes('peito') || normalized.includes('chest')) {
-      return require('../../../assets/peito.png');
-    } else if (normalized.includes('ombro') || normalized.includes('shoulder')) {
-      return require('../../../assets/ombro.png');
-    } else if (normalized.includes('perna') || normalized.includes('leg') || normalized.includes('panturrilha')) {
-      return require('../../../assets/perna.png');
-    } else if (normalized.includes('músculo') || normalized.includes('muscle')) {
-      return require('../../../assets/musculo.png');
-    } else {
-      // Ícone padrão para outros grupos
-      return require('../../../assets/parte-do-corpo.png');
+    const normalized = normalizeGroupName(muscleName);
+
+    switch (normalized) {
+      case 'peito':
+        return require('../../../assets/peito.png');
+      case 'costa':
+      case 'costas':
+        return require('../../../assets/Costas.png');
+      case 'ombro':
+      case 'ombros':
+        return require('../../../assets/ombro.png');
+      case 'braco':
+      case 'bracos':
+        return require('../../../assets/braço.png');
+      case 'perna':
+      case 'pernas':
+        return require('../../../assets/perna.png');
+      case 'gluteo':
+      case 'gluteos':
+        return require('../../../assets/bunda.png');
+      case 'abdomen':
+      case 'core':
+        return require('../../../assets/abdomen.png');
+      default:
+        return require('../../../assets/braço.png');
     }
   };
 
@@ -266,10 +284,14 @@ const ProfileScreen = ({ navigation }: any) => {
       </View>
 
       <Text style={profileStyles.workoutTitle}>
-        {workout.name || 'Treino'}
-        {workout.dayName && typeof workout.dayName === 'string' && workout.dayName.trim().length > 0 && (
-          <> • {workout.dayName}</>
-        )}
+        {(() => {
+          const name = workout.name?.trim() ?? 'Treino';
+          const dayName = workout.dayName?.trim() ?? '';
+          if (dayName && normalizeGroupName(name) !== normalizeGroupName(dayName)) {
+            return `${name} • ${dayName}`;
+          }
+          return dayName || name;
+        })()}
       </Text>
 
       {workout.notes && typeof workout.notes === 'string' && workout.notes.trim().length > 0 && (
@@ -302,7 +324,11 @@ const ProfileScreen = ({ navigation }: any) => {
             .filter((m): m is string => Boolean(m) && typeof m === 'string' && m.trim().length > 0)
             .slice(0, 3)
             .map((muscle, idx) => {
-              const count = workout.exercises?.filter(ex => ex && ex.bodyPart === muscle).length || 0;
+              const normalizedTarget = normalizeGroupName(muscle);
+              const count = workout.exercises?.filter((ex) => {
+                if (!ex?.bodyPart) return false;
+                return normalizeGroupName(ex.bodyPart) === normalizedTarget;
+              }).length || 0;
               
               return (
                 <View key={`mg-${idx}`} style={profileStyles.muscleItem}>

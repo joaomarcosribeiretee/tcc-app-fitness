@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } fr
 import { AppHeader } from '../components/layout/AppHeader';
 import RejectModal from '../components/ui/RejectModal';
 import { workoutDetailStyles } from '../styles/workoutDetailStyles';
-import { mockWorkouts } from '../../data/mockWorkouts';
 import { RoutineType, Exercise } from '../../domain/entities/Workout';
 import { WorkoutPlan, WorkoutPlanDay } from '../../domain/entities/WorkoutPlan';
 import { deleteItem } from '../../infra/secureStore';
@@ -20,6 +19,7 @@ interface WorkoutDetailScreenProps {
       fromHome?: boolean;
       dayId?: string; // ID do dia específico no plano
       workoutPlan?: WorkoutPlan; // Plano atual (ainda não salvo)
+      dayData?: WorkoutPlanDay;
     };
   };
 }
@@ -68,10 +68,11 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
   const planId = route.params?.planId;
   const dayId = route.params?.dayId;
   const workoutPlan = route.params?.workoutPlan; // Plano atual (ainda não salvo)
+  const passedDay = route.params?.dayData;
   
-  const [workoutDay, setWorkoutDay] = useState<WorkoutPlanDay | null>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [workoutDay, setWorkoutDay] = useState<WorkoutPlanDay | null>(passedDay ?? null);
+  const [exercises, setExercises] = useState<Exercise[]>(passedDay?.exercises ?? []);
+  const [loading, setLoading] = useState(passedDay == null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Carregar os exercícios do dia específico do plano
@@ -82,6 +83,15 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
       console.log('=== WorkoutDetailScreen Debug ===');
       console.log('planId:', planId, 'dayId:', dayId, 'routineType:', routineType);
       console.log('workoutPlan:', workoutPlan ? 'Presente' : 'Ausente');
+      console.log('passedDay disponível:', passedDay ? 'sim' : 'não');
+
+      if (passedDay && !fromHome) {
+        setWorkoutDay(passedDay);
+        setExercises(passedDay.exercises ?? []);
+        setLoading(false);
+        console.log('📄 Usando dayData passado diretamente');
+        return;
+      }
 
       setLoading(true);
 
@@ -132,27 +142,10 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
           if (resolvedDay) {
             setWorkoutDay(resolvedDay);
             setExercises(resolvedExercises);
-          } else if (!planId) {
-            const fallbackWorkout = mockWorkouts[routineType];
-            if (fallbackWorkout) {
-              const fallbackDay: WorkoutPlanDay = {
-                id: routineType,
-                dayNumber: 1,
-                routineType,
-                name: fallbackWorkout.name,
-                exercises: fallbackWorkout.exercises,
-                completed: false,
-                description: fallbackWorkout.description,
-                duration: null,
-                difficulty: fallbackWorkout.difficulty,
-              };
-              setWorkoutDay(fallbackDay);
-              setExercises(fallbackWorkout.exercises);
-            } else {
-              setWorkoutDay(null);
-              setExercises([]);
-            }
           } else if (shouldFetchRemote) {
+            setWorkoutDay(null);
+            setExercises([]);
+          } else {
             setWorkoutDay(null);
             setExercises([]);
           }
@@ -160,35 +153,8 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
       } catch (error) {
         console.error('❌ Error loading workout day:', error);
         if (isMounted) {
-          if (!planId) {
-            const fallbackWorkout = mockWorkouts[routineType];
-            if (fallbackWorkout) {
-              const fallbackDay: WorkoutPlanDay = {
-                id: routineType,
-                dayNumber: 1,
-                routineType,
-                name: fallbackWorkout.name,
-                exercises: fallbackWorkout.exercises,
-                completed: false,
-                description: fallbackWorkout.description,
-                duration: null,
-                difficulty: fallbackWorkout.difficulty,
-              };
-              setWorkoutDay(fallbackDay);
-              setExercises(fallbackWorkout.exercises);
-            } else {
-              setWorkoutDay(null);
-              setExercises([]);
-            }
-          } else if (fromHome) {
-            setWorkoutDay(null);
-            setExercises([]);
-          }
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-          console.log('===============================');
+          setWorkoutDay(null);
+          setExercises([]);
         }
       }
     };
@@ -198,9 +164,9 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
     return () => {
       isMounted = false;
     };
-  }, [planId, dayId, dayName, routineType, workoutPlan]);
+  }, [planId, dayId, dayName, routineType, workoutPlan, passedDay]);
 
-  if (loading) {
+  if (loading && !passedDay) {
     return (
       <View style={workoutDetailStyles.container}>
         <AppHeader title="WEIGHT" onSettingsPress={() => setShowLogoutModal(true)} />
@@ -212,9 +178,7 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
     );
   }
 
-  const fallbackWorkout = !planId ? mockWorkouts[routineType] : undefined;
-
-  if (!workoutDay && !fallbackWorkout) {
+  if (!workoutDay) {
     return (
       <View style={workoutDetailStyles.container}>
         <AppHeader title="WEIGHT" onSettingsPress={() => setShowLogoutModal(true)} />
@@ -228,22 +192,28 @@ const WorkoutDetailScreen = ({ navigation, route }: WorkoutDetailScreenProps) =>
     );
   }
 
-  const displayName = workoutDay?.name ?? dayName ?? fallbackWorkout?.name ?? 'Treino';
-  const displayDescription = workoutDay?.description ?? fallbackWorkout?.description ?? '';
+  const displayName = workoutDay?.name ?? dayName ?? 'Treino';
+  const displayDescription = workoutDay?.description ?? '';
   const displayDifficulty = formatDifficulty(
     workoutDay?.difficulty,
-    fallbackWorkout?.difficulty ?? workoutDay?.routineType ?? routineType
+    workoutDay?.routineType ?? routineType
   );
   const displayDuration = workoutDay?.duration != null
     ? `${workoutDay.duration} min`
-    : fallbackWorkout?.duration ?? '-';
+    : '-';
 
   const handleStartWorkout = () => {
+    const treinoIdentifier = workoutDay?.id ?? dayId;
     navigation.navigate('WorkoutExecution', {
       routineType,
       dayName,
       planId,
-      dayId,
+      dayId: treinoIdentifier,
+      treinoId: treinoIdentifier,
+      workoutName: displayName,
+      workoutDescription: displayDescription,
+      workoutDifficulty: displayDifficulty,
+      workoutDuration: workoutDay?.duration ?? null,
       exercises: exercises, // Passar os exercícios específicos
     });
   };

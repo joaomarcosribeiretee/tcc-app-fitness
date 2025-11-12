@@ -299,6 +299,13 @@ export const executionStyles = StyleSheet.create({
     color: colors.secondary,
     textAlign: 'center',
   },
+  summaryDescription: {
+    fontSize: 14,
+    color: colors.secondary,
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 20,
+  },
 
   // Seções
   section: {

@@ -89,6 +89,16 @@ export const workoutDetailStyles = StyleSheet.create({
     color: colors.primary,
     marginBottom: 16,
   },
+  section: {
+    marginHorizontal: 16,
+    marginTop: 24,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: colors.secondary,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
   exerciseCard: {
     backgroundColor: colors.surface,
     borderRadius: 12,
@@ -262,24 +272,6 @@ export const workoutDetailStyles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Seções
-  section: {
-    marginHorizontal: 16,
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 8,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: colors.secondary,
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-
   // Grupos musculares
   muscleGroupsContainer: {
     flexDirection: 'row',
@@ -298,8 +290,8 @@ export const workoutDetailStyles = StyleSheet.create({
     color: colors.primary,
   },
 
-  // Exercícios
-  exerciseCard: {
+  // Exercícios (histórico)
+  historyExerciseCard: {
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
@@ -307,50 +299,48 @@ export const workoutDetailStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  exerciseHeader: {
+  historyExerciseHeader: {
     marginBottom: 12,
   },
-  exerciseName: {
+  historyExerciseName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: colors.primary,
     marginBottom: 4,
   },
-  exerciseBodyPart: {
+  historyExerciseBodyPart: {
     fontSize: 14,
     color: colors.secondary,
   },
-  exerciseStats: {
+  historyExerciseStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
-  exerciseStat: {
+  historyExerciseStat: {
     alignItems: 'center',
   },
-  exerciseStatValue: {
+  historyExerciseStatValue: {
     fontSize: 14,
     fontWeight: 'bold',
     color: colors.primary,
     marginBottom: 2,
     textAlign: 'center',
     maxWidth: 60,
-    numberOfLines: 1,
-    ellipsizeMode: 'tail',
   },
-  exerciseStatLabel: {
+  historyExerciseStatLabel: {
     fontSize: 12,
     color: colors.secondary,
   },
 
-  // Botões
-  buttonContainer: {
+  // Botões (histórico)
+  historyButtonContainer: {
     paddingHorizontal: 16,
     paddingVertical: 20,
     backgroundColor: '#151F2B', // Mesma cor do header
     borderTopWidth: 1,
     borderTopColor: '#787F84', // Traço azul como no header
   },
-  backButton: {
+  historyBackButton: {
     backgroundColor: '#151F2B', // Mesma cor do header
     paddingVertical: 16,
     borderRadius: 12,
@@ -358,7 +348,7 @@ export const workoutDetailStyles = StyleSheet.create({
     borderColor: '#787F84', // Cor azul do header
     alignItems: 'center',
   },
-  backButtonText: {
+  historyBackButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#787F84', // Cor azul do header

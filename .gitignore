@@ -9,6 +9,7 @@ Thumbs.db
 *.swp
 *.swo
 *~
+*.pem
 
 # IDEs e Editores
 .vscode/
@@ -30,6 +31,7 @@ logs/
 .env.development.local
 .env.test.local
 .env.production.local
+.env*.local
 backend-tcc-fitness/.env
 
 # Python
@@ -73,6 +75,7 @@ yarn.lock
 .expo-shared/
 dist/
 web-build/
+expo-env.d.ts
 
 # React Native
 *.jks
@@ -83,6 +86,12 @@ web-build/
 *.orig.*
 buck-out/
 *.hprof
+
+# Native
+.kotlin/
+
+# Metro
+.metro-health-check*
 
 # Build outputs
 *.apk
@@ -122,3 +131,9 @@ uv.lock
 TODO.md
 NOTES.md
 
+# TypeScript
+*.tsbuildinfo
+
+# Generated native folders
+/ios
+/android

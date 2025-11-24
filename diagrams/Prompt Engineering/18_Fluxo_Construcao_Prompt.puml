@@ -1,0 +1,33 @@
+@startuml Fluxo_Construcao_Prompt
+title Fluxo de Construção e Processamento dos Prompts
+
+actor Usuario
+participant Backend
+participant "GPT-4o Mini" as GPT
+database "Banco de Dados" as DB
+
+== Geração de Plano ==
+
+Usuario -> Backend: Envia anamnese
+Backend -> Backend: build_prompt()\n1. Carrega template\n2. Insere anamnese
+Backend -> GPT: Prompt completo
+GPT -> GPT: Processa com regras
+GPT --> Backend: JSON estruturado
+Backend --> Usuario: Plano gerado\n(não persiste)
+
+== Ajuste de Plano ==
+
+Usuario -> Backend: Solicita ajustes
+Backend -> Backend: build_adjustment_prompt()\nTemplate + Plano + Ajustes
+Backend -> GPT: Prompt de ajuste
+GPT --> Backend: Plano revisado
+Backend --> Usuario: Novo plano
+
+== Persistência ==
+
+Usuario -> Backend: Aceita plano
+Backend -> DB: Salva no banco
+DB --> Backend: Confirmado
+Backend --> Usuario: Plano salvo
+
+@enduml

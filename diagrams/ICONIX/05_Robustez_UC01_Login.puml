@@ -1,0 +1,36 @@
+@startuml Diagrama de Robustez - UC01: Realizar Login
+
+title Diagrama de Robustez - UC01: Realizar Login
+
+actor Usuario
+
+boundary "LoginScreen" as Screen
+boundary "ValidatedInput" as Input
+
+control "AuthViewModel" as ViewModel
+control "LoginUseCase" as UseCase
+control "HttpAuthRepository" as Repository
+control "Backend API (FastAPI)" as Backend
+
+entity "Usuario" as User
+entity "JWT Token" as Token
+entity "Database (MySQL)" as DB
+
+Usuario --> Screen : Informa email/senha
+Screen --> Input : Valida campos
+Input --> ViewModel : Submete credenciais
+ViewModel --> UseCase : Executa login
+UseCase --> Repository : Faz requisição HTTP
+Repository --> Backend : POST /api/login
+Backend --> DB : Consulta usuário
+DB --> Backend : Retorna dados
+Backend --> Backend : Valida senha (bcrypt)
+Backend --> Backend : Gera JWT
+Backend --> Repository : Retorna token
+Repository --> UseCase : Token recebido
+UseCase --> ViewModel : Atualiza estado
+ViewModel --> Screen : Salva token (SecureStore)
+Screen --> Usuario : Navega para Home
+
+@enduml
+

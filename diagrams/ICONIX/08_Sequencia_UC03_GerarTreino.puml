@@ -1,0 +1,160 @@
+@startuml
+title Diagrama de Sequência - Fluxo de Treinos (Gerar / Ajustar / Aceitar / Executar)
+
+' Instâncias do Diagrama de Robustez
+actor Usuario
+boundary "TreinoScreen" as Screen
+control "TreinoUseCase" as TreinoUC
+control "TreinoRepository" as TreinoRepo
+
+' Entidades do Domínio (do Modelo de Domínio)
+entity "AnamneseTreino" as Anamnese
+entity "ProgramaTreino" as Programa
+entity "Treino" as Treino
+entity "ExercicioTreino" as Exercicio
+entity "SessaoTreino" as Sessao
+entity "Serie" as Serie
+
+' ===== 1. Geração de Plano de Treino =====
+Usuario -> Screen : Informar dados da anamnese
+activate Screen
+Screen -> Screen : Validar dados preenchidos
+Screen -> TreinoUC : Solicitar geração de plano
+activate TreinoUC
+
+TreinoUC -> Anamnese : Criar a partir dos dados informados
+activate Anamnese
+Anamnese --> TreinoUC : Anamnese criada
+deactivate Anamnese
+
+TreinoUC -> Programa : Gerar programa a partir da anamnese
+activate Programa
+Programa -> Treino : Criar treinos do programa
+activate Treino
+Treino -> Exercicio : Adicionar exercícios ao treino
+activate Exercicio
+Exercicio --> Treino : Exercícios configurados
+deactivate Exercicio
+Treino --> Programa : Treinos criados
+deactivate Treino
+Programa --> TreinoUC : Programa gerado
+deactivate Programa
+
+TreinoUC -> TreinoRepo : Persistir programa gerado
+activate TreinoRepo
+TreinoRepo --> TreinoUC : Programa salvo
+deactivate TreinoRepo
+
+TreinoUC --> Screen : Retornar programa para exibição
+deactivate TreinoUC
+Screen -> Usuario : Exibir plano (Aceitar / Recusar / Ajustar)
+deactivate Screen
+
+' ===== 2. Ajustes do Plano de Treino =====
+Usuario -> Screen : Solicitar ajustes (comentários)
+activate Screen
+Screen -> TreinoUC : Enviar solicitação de ajuste
+activate TreinoUC
+
+TreinoUC -> Programa : Aplicar ajustes solicitados
+activate Programa
+Programa -> Treino : Revisar treinos conforme ajustes
+activate Treino
+Treino -> Exercicio : Modificar exercícios conforme necessário
+activate Exercicio
+Exercicio --> Treino : Exercícios ajustados
+deactivate Exercicio
+Treino --> Programa : Treinos revisados
+deactivate Treino
+Programa --> TreinoUC : Programa ajustado
+deactivate Programa
+
+TreinoUC -> TreinoRepo : Atualizar programa ajustado
+activate TreinoRepo
+TreinoRepo --> TreinoUC : Programa atualizado
+deactivate TreinoRepo
+
+TreinoUC --> Screen : Retornar programa ajustado
+deactivate TreinoUC
+Screen -> Usuario : Exibir plano revisado
+deactivate Screen
+
+' ===== 3. Aceitar Plano =====
+Usuario -> Screen : Aceitar plano
+activate Screen
+Screen -> TreinoUC : Confirmar aceitação
+activate TreinoUC
+
+TreinoUC -> Programa : Marcar como aceito
+activate Programa
+Programa --> TreinoUC : Status atualizado
+deactivate Programa
+
+TreinoUC -> TreinoRepo : Persistir aceitação
+activate TreinoRepo
+TreinoRepo --> TreinoUC : Confirmação
+deactivate TreinoRepo
+
+TreinoUC --> Screen : Notificar sucesso
+deactivate TreinoUC
+Screen -> Usuario : Exibir confirmação
+deactivate Screen
+
+' ===== 4. Execução de Treino =====
+Usuario -> Screen : Iniciar execução do treino
+activate Screen
+Screen -> TreinoUC : Solicitar início da sessão
+activate TreinoUC
+
+TreinoUC -> Sessao : Criar sessão para o treino
+activate Sessao
+Sessao --> TreinoUC : Sessão criada
+deactivate Sessao
+
+TreinoUC --> Screen : Retornar sessão iniciada
+deactivate TreinoUC
+
+loop [Para cada série executada]
+    Usuario -> Screen : Registrar série (peso, reps)
+    Screen -> TreinoUC : Enviar dados da série
+    activate TreinoUC
+    
+    TreinoUC -> Serie : Criar série com dados executados
+    activate Serie
+    Serie -> Sessao : Associar à sessão
+    activate Sessao
+    Sessao --> Serie : Confirmação
+    deactivate Sessao
+    Serie --> TreinoUC : Série registrada
+    deactivate Serie
+    
+    TreinoUC -> TreinoRepo : Persistir série
+    activate TreinoRepo
+    TreinoRepo --> TreinoUC : Confirmação
+    deactivate TreinoRepo
+    
+    TreinoUC --> Screen : Atualizar progresso
+    deactivate TreinoUC
+    Screen -> Usuario : Exibir progresso
+end
+
+Usuario -> Screen : Finalizar sessão
+Screen -> TreinoUC : Encerrar sessão
+activate TreinoUC
+
+TreinoUC -> Sessao : Marcar como finalizada
+activate Sessao
+Sessao --> TreinoUC : Status atualizado
+deactivate Sessao
+
+TreinoUC -> TreinoRepo : Persistir finalização
+activate TreinoRepo
+TreinoRepo --> TreinoUC : Confirmação
+deactivate TreinoRepo
+
+TreinoUC --> Screen : Retornar resumo da sessão
+deactivate TreinoUC
+Screen -> Usuario : Exibir resumo final
+deactivate Screen
+
+@enduml

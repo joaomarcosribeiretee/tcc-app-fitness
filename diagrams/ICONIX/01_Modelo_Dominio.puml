@@ -1,0 +1,33 @@
+@startuml Modelo de Domínio - TCC Fitness App
+
+title Modelo de Domínio - TCC Fitness App
+
+class Usuario
+class ProgramaTreino
+class Treino
+class ExercicioTreino
+class SessaoTreino
+class Series
+class PlanoDieta
+class Refeicao
+class AnamneseTreino
+class AnamneseDieta
+
+' Relacionamentos
+Usuario "1" --> "*" ProgramaTreino : possui
+Usuario "1" --> "*" PlanoDieta : possui
+Usuario "1" --> "*" SessaoTreino : realiza
+Usuario "1" --> "*" AnamneseTreino : gera
+Usuario "1" --> "*" AnamneseDieta : gera
+
+ProgramaTreino "1" --> "*" Treino : contém
+Treino "1" --> "*" ExercicioTreino : contém
+
+PlanoDieta "1" --> "*" Refeicao : contém
+
+Treino "1" --> "*" SessaoTreino : executa
+SessaoTreino "1" --> "*" Series : registra
+ExercicioTreino "1" --> "*" Series : possui
+
+@enduml
+

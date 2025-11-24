@@ -1,0 +1,25 @@
+[project]
+name = "teste-uv"
+version = "0.1.0"
+description = "teste de script uv"
+requires-python = ">=3.11"
+dependencies = [
+    "bcrypt>=5.0.0",
+    "fastapi>=0.120.1",
+    "mysql-connector>=2.2.9",
+    "openai>=2.6.1",
+    "pandas>=2.3.3",
+    "pydantic-settings>=2.11.0",
+    "pymysql>=1.1.2",
+    "python-dotenv>=1.2.1",
+    "python-jose>=3.5.0",
+    "sqlalchemy>=2.0.44",
+    "taskipy>=1.14.1",
+    "uvicorn>=0.30.0",
+]
+
+[tool.taskipy.tasks]
+s = "fastapi dev main.py --host 0.0.0.0 --port 8000"
+start = "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+gpt = "python teste.py"
+json = "python json_mysql.py"

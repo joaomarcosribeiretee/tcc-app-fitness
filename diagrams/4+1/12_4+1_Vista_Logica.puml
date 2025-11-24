@@ -1,0 +1,110 @@
+@startuml
+title Vista Lógica - Modelo 4+1 de Kruchten
+
+!define RECTANGLE class
+
+package "Aplicação Mobile (Frontend)" {
+    
+    package "Camada de Apresentação" {
+        [Screens] as Screens
+        [ViewModels] as ViewModels
+        [Components] as Components
+    }
+    
+    package "Camada de Domínio" {
+        [Entities] as Entities
+        [Use Cases] as UseCases
+        [Repository Interfaces] as RepoInterfaces
+    }
+    
+    package "Camada de Infraestrutura" {
+        [HTTP Repositories] as HTTPRepos
+        [SecureStore] as SecureStore
+        [Storage Services] as Storage
+    }
+    
+    package "Camada de Serviços" {
+        [Workout Services] as WorkoutServices
+        [Diet Services] as DietServices
+    }
+}
+
+package "Backend (API REST)" {
+    
+    package "Camada de Roteamento" {
+        [API Endpoints] as Endpoints
+    }
+    
+    package "Camada de Modelos" {
+        [Pydantic Models] as Models
+    }
+    
+    package "Camada de Lógica de Negócio" {
+        [Prompt Builder] as PromptBuilder
+        [GPT Integration] as GPTIntegration
+        [Persistence Logic] as Persistence
+    }
+    
+    package "Camada de Acesso a Dados" {
+        [SQLAlchemy] as SQLAlchemy
+        [MySQL Database] as MySQL
+    }
+}
+
+package "Integração com IA" {
+    [OpenAI GPT-4o Mini] as GPT
+    [Fine-Tuning Service] as FineTuning
+}
+
+' Relacionamentos Frontend
+Screens --> ViewModels : usa (auth)
+ViewModels --> UseCases : chama (auth)
+UseCases --> RepoInterfaces : depende (auth)
+HTTPRepos ..|> RepoInterfaces : implementa (auth)
+HTTPRepos --> SecureStore : armazena token
+
+Screens --> WorkoutServices : chama diretamente\n(workout/diet)
+Screens --> DietServices : chama diretamente
+WorkoutServices --> HTTPRepos : HTTP requests
+DietServices --> HTTPRepos : HTTP requests
+HTTPRepos --> Storage : persistência local
+
+' Relacionamentos Backend
+Endpoints --> Models : valida
+Endpoints --> PromptBuilder : chama
+Endpoints --> Persistence : chama
+PromptBuilder --> GPTIntegration : usa
+GPTIntegration --> GPT : comunica via API
+Persistence --> SQLAlchemy : usa
+SQLAlchemy --> MySQL : acessa
+
+' Relacionamentos entre Frontend e Backend
+HTTPRepos --> Endpoints : HTTP REST\n(JSON)
+
+' Relacionamentos IA
+GPT --> FineTuning : usa modelo\nfine-tuned
+
+note right of Screens
+  LoginScreen, HomeScreen,
+  WorkoutPlanScreen,
+  DietPlanScreen, etc.
+end note
+
+note right of Entities
+  Usuario, WorkoutPlan,
+  DietPlan, etc.
+end note
+
+note right of Endpoints
+  /cadastro, /login,
+  /gpt, /gpt/ajustar,
+  /gpt/confirm, etc.
+end note
+
+note right of GPT
+  Modelo fine-tuned:
+  ft:gpt-4o-mini-...
+end note
+
+@enduml
+

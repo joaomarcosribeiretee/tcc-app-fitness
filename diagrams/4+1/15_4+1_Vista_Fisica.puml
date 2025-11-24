@@ -1,0 +1,80 @@
+@startuml
+title Vista Física - Modelo 4+1 de Kruchten
+
+node "Dispositivo Móvel\n(Cliente)" {
+    [Aplicativo React Native] as App
+    [Expo Runtime] as Expo
+    [SecureStore\n(Token JWT)] as LocalStorage
+    [Rede Móvel/WiFi] as Network
+}
+
+cloud "Internet/HTTP" {
+}
+
+node "Servidor Backend" {
+    [FastAPI Application] as FastAPI
+    [Uvicorn Server\n(Port 8000)] as Uvicorn
+    [Python Runtime 3.11+] as Python
+    [Thread Pool\n(Workers)] as Workers
+}
+
+database "Banco de Dados MySQL" {
+    [MySQL Server\n(Port 3306)] as MySQL
+    [Connection Pool] as ConnPool
+    [Tabelas:\nUsuario, ProgramaTreino,\nTreino, Dieta, etc.] as Tables
+}
+
+cloud "OpenAI Cloud" {
+    [OpenAI API\n(HTTPS)] as OpenAIAPI
+    [GPT-4o Mini\nFine-Tuned] as GPTModel
+}
+
+' Conexões físicas
+App --> Network : Requisições HTTP
+Network --> Internet : Via Internet/HTTP
+Internet --> Uvicorn : HTTP Requests
+Uvicorn --> FastAPI : Processa requisições
+FastAPI --> Workers : Aloca workers
+Workers --> MySQL : SQL Queries\n(SQLAlchemy)
+Workers --> OpenAIAPI : API Calls\n(HTTPS)
+
+' Armazenamento local
+App --> LocalStorage : Armazena token
+
+' Conexão banco
+FastAPI --> MySQL : Conexão persistente\nvia SQLAlchemy
+
+' Conexão IA
+Workers --> OpenAIAPI : Requisições assíncronas
+
+note right of App
+  Android ou iOS
+  React Native + Expo
+end note
+
+note right of FastAPI
+  Servidor Linux/Windows/Mac
+  ASGI Assíncrono
+  Múltiplos workers
+end note
+
+note right of MySQL
+  Mesmo servidor ou
+  servidor dedicado
+  Pool de conexões
+end note
+
+note right of OpenAIAPI
+  Servidores da OpenAI
+  HTTPS seguro
+  Modelo fine-tuned
+end note
+
+note bottom of Internet
+  Comunicação via HTTP/HTTPS
+  JSON como formato de dados
+  Tokens JWT para autenticação
+end note
+
+@enduml
+

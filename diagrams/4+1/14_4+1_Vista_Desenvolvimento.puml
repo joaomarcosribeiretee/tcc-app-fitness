@@ -1,0 +1,76 @@
+@startuml Vista_Desenvolvimento_4_1
+title Vista de Desenvolvimento - Modelo 4+1 de Kruchten
+
+package "FRONTEND" {
+    
+    rectangle "src/domain\n(Clean Architecture)" {
+        [entities/\nUsuario.ts\nWorkoutPlan.ts\nDietPlan.ts\nWorkout.ts]
+        [repositories/\nAuthRepository.ts (interface)\nHttpAuthRepository.ts]
+        [usecases/\nLoginUseCase.ts\nRegisterUseCase.ts]
+    }
+    
+    rectangle "src/presentation\n(MVVM)" {
+        [auth/\nLoginScreen.tsx\nRegisterScreen.tsx]
+        [workout/\n7 telas:\nIntelligentWorkoutScreen\nWorkoutPlanScreen\nWorkoutExecutionScreen\nWorkoutAdjustmentsScreen\nWorkoutDetailScreen\nWorkoutSummaryScreen\nWorkoutDetailsScreen]
+        [diet/\n4 telas:\nIntelligentDietScreen\nDietPlanScreen\nDietAdjustmentsScreen\nDietScreen]
+        [viewmodels/\nAuthViewModel.ts\n(único ViewModel)]
+        [components/\nValidatedInput.tsx\nLoadingModal.tsx\nModals, Layout...]
+    }
+    
+    rectangle "src/services" {
+        [workoutPlanService.ts]
+        [dietPlanService.ts]
+        [exerciseDB.ts]
+    }
+    
+    rectangle "src/infra" {
+        [apiConfig.ts\nsecureStore.ts\nuserService.ts\nworkoutPlanStorage.ts\nworkoutHistoryService.ts]
+    }
+}
+
+package "BACKEND" {
+    
+    rectangle "src/core" {
+        [config.py\ndatabase.py\ninit_db.py]
+    }
+    
+    rectangle "src/routers/apis" {
+        [usuario/\ncadastro.py]
+        [gpt/\ngpt.py\ngpt_dieta.py\nfuncs_gpt.py]
+        [treino/\nlistagem.py\ntreino_usuario.py]
+        [dieta/\ndieta.py]
+    }
+    
+    rectangle "src/routers/models" {
+        [anamnesemodel.py\n(Pydantic)\nusuario_model.py\nconsultas.py]
+    }
+    
+    [main.py\nFastAPI app]
+}
+
+note right of "src/domain\n(Clean Architecture)"
+  <b>Clean Architecture</b>
+  Entidades e regras
+  de negócio independentes
+end note
+
+note right of "src/presentation\n(MVVM)"
+  <b>MVVM Pattern</b>
+  Apenas auth usa ViewModel
+  Workout/Diet chamam
+  services diretamente
+end note
+
+note right of "src/services"
+  <b>Services Layer</b>
+  Comunicação HTTP
+  direta com backend
+end note
+
+note right of "src/routers/apis"
+  <b>Organização por Features</b>
+  APIs agrupadas por
+  funcionalidade
+end note
+
+@enduml

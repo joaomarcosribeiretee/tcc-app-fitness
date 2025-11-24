@@ -1,0 +1,85 @@
+@startuml Vista_Processo_4_1
+title Vista de Processo - Modelo 4+1 de Kruchten
+
+participant "Interface do Usuário\n(UI Thread)" as MobileUI
+participant "Serviços HTTP\n(Network)" as MobileHTTP
+participant "Armazenamento Local\n(SecureStore)" as MobileStorage
+participant "Servidor HTTP\n(FastAPI - Porta 8000)" as BackendServer
+participant "Processamento\nBackend" as BackendProcess
+database "MySQL Server\n(Porta 3306)" as MySQL
+participant "OpenAI API\n(GPT-4o Mini)" as OpenAI
+
+group Fluxo 1: Autenticação de Usuário
+    MobileUI -> MobileHTTP : Usuário faz login
+    MobileHTTP -> BackendServer : POST /login (email, senha)
+    BackendServer -> BackendProcess : Processa requisição
+    BackendProcess -> MySQL : Consulta usuário no banco
+    MySQL --> BackendProcess : Retorna dados do usuário
+    BackendProcess -> BackendProcess : Valida senha (bcrypt)\nGera token JWT
+    BackendProcess --> BackendServer : Retorna token
+    BackendServer --> MobileHTTP : Resposta JSON com token
+    MobileHTTP -> MobileStorage : Armazena token JWT (SecureStore)
+    MobileStorage --> MobileUI : Confirmação
+    MobileUI -> MobileUI : Navega para Home
+end
+
+group Fluxo 2: Geração de Plano de Treino
+    MobileUI -> MobileHTTP : Usuário preenche anamnese
+    MobileHTTP -> BackendServer : POST /gpt (dados da anamnese)
+    BackendServer -> BackendProcess : Recebe e processa
+    BackendProcess -> BackendProcess : Constrói prompt estruturado
+    BackendProcess -> OpenAI : Envia prompt (via OpenAI SDK)
+    OpenAI -> OpenAI : Processa com modelo fine-tuned
+    OpenAI --> BackendProcess : Retorna plano em JSON
+    BackendProcess -> BackendProcess : Valida estrutura JSON\n(extrai e normaliza)
+    note right of BackendProcess
+      IMPORTANTE: NÃO persiste no banco ainda!
+      O plano é apenas uma PROPOSTA.
+    end note
+    BackendProcess --> BackendServer : Retorna plano gerado
+    BackendServer --> MobileHTTP : JSON com plano
+    MobileHTTP --> MobileUI : Recebe dados
+    MobileUI -> MobileUI : Exibe plano (Aceitar/Recusar/Ajustar)
+end
+
+group Fluxo 3: Aceitar Plano (Persistência)
+    MobileUI -> MobileHTTP : Usuário aceita o plano
+    MobileHTTP -> BackendServer : POST /gpt/confirm (plano completo)
+    BackendServer -> BackendProcess : Recebe confirmação
+    BackendProcess -> BackendProcess : Valida estrutura do plano
+    BackendProcess -> MySQL : Persiste no banco\n(PROGRAMA_TREINO, TREINO, EXERCICIO_TREINO)
+    MySQL --> BackendProcess : Confirmação de inserção
+    BackendProcess --> BackendServer : Sucesso
+    BackendServer --> MobileHTTP : Resposta de sucesso
+    MobileHTTP --> MobileUI : Notifica sucesso
+    MobileUI -> MobileUI : Plano salvo e disponível
+end
+
+group Fluxo 4: Execução de Treino
+    MobileUI -> MobileHTTP : Usuário executa treino\n(registra séries, pesos, reps)
+    MobileHTTP -> BackendServer : POST /sessoes (dados da execução)
+    BackendServer -> BackendProcess : Recebe dados
+    BackendProcess -> MySQL : Persiste SESSAO_TREINO e SERIES
+    MySQL --> BackendProcess : Confirmação
+    BackendProcess --> BackendServer : Sucesso
+    BackendServer --> MobileHTTP : Confirmação
+    MobileHTTP --> MobileUI : Atualiza interface
+    MobileUI -> MobileUI : Exibe resumo do treino
+end
+
+note over BackendServer
+  FastAPI com Uvicorn pode processar
+  múltiplas requisições simultaneamente.
+  Cada requisição é processada de forma
+  independente e síncrona.
+end note
+
+note over MobileUI
+  React Native gerencia threads:
+  - UI Thread: Renderização
+  - Network Thread: Requisições HTTP
+  - Storage Thread: Operações locais
+end note
+
+@enduml
+

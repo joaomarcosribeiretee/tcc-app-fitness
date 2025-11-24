@@ -1,0 +1,66 @@
+@startuml
+title Diagrama de Robustez - Fluxo de Treinos (Gerar/Ajustar/Aceitar/Recusar/Executar)
+
+skinparam ParticipantPadding 5
+skinparam ArrowThickness 1
+
+actor Usuario
+boundary "Home / TreinoScreen" as Screen
+boundary "ValidatedInput" as Input
+control "AuthViewModel" as VM
+control "TreinoUseCase" as TreinoUC
+control "HttpTreinoRepository" as TreinoRepo
+control "Backend API (FastAPI)" as Backend
+entity "Database (MySQL)" as DB
+control "GPT Service" as GPT
+
+Usuario --> Screen : Acessa Treinos / Solicita Geração
+Screen --> Input : Valida anamnese
+Input --> VM : Submete dados
+
+' ===== Geração de Plano (IA) =====
+VM --> TreinoUC : Gerar plano (anamnese)
+TreinoUC --> TreinoRepo : POST /api/gpt/treino
+TreinoRepo --> Backend : Envia anamnese
+Backend --> GPT : Prompt Treino
+GPT --> Backend : Plano JSON
+Backend --> DB : Persistir plano (status: gerado)
+Backend --> TreinoRepo : Plano
+TreinoRepo --> TreinoUC : Plano
+TreinoUC --> Screen : Exibir plano (Aceitar | Recusar | Solicitar Ajustes)
+
+' ===== Ajustes de Plano (IA) =====
+Usuario --> Screen : Solicitar Ajustes
+Screen --> TreinoUC : Texto de ajustes
+TreinoUC --> TreinoRepo : POST /api/gpt/treino/ajustar
+TreinoRepo --> Backend : Envia plano + ajustes
+Backend --> GPT : Prompt Ajuste
+GPT --> Backend : Plano revisado
+Backend --> DB : Atualiza plano
+Backend --> TreinoRepo : Plano revisado
+TreinoRepo --> TreinoUC : Plano revisado
+TreinoUC --> Screen : Exibir revisado
+
+' ===== Aceitar / Recusar =====
+Usuario --> Screen : Aceitar
+Screen --> TreinoUC : Confirmar
+TreinoUC --> TreinoRepo : POST /api/gpt/treino/confirm
+TreinoRepo --> Backend : Confirma/associa usuário
+Backend --> DB : Plano aceito
+
+Usuario --> Screen : Recusar
+Screen --> TreinoUC : Descartar
+TreinoUC --> Backend : Atualiza/descarta (opcional)
+
+' ===== Execução de Treino =====
+Usuario --> Screen : Iniciar Execução
+Screen --> VM : Iniciar timer / ações de séries
+VM --> TreinoUC : Registrar série (peso, reps, concluir / extra)
+TreinoUC --> TreinoRepo : POST /api/treino/execucao
+TreinoRepo --> Backend : Persistir sessão e séries
+Backend --> DB : SESSAO_TREINO, SERIES
+TreinoRepo --> TreinoUC : OK
+TreinoUC --> Screen : Sucesso / Resumo
+
+@enduml
+

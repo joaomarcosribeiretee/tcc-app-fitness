@@ -1,0 +1,114 @@
+@startuml
+title Diagrama de Sequência - Fluxo de Dietas (Gerar / Ajustar / Aceitar)
+
+' Instâncias do Diagrama de Robustez
+actor Usuario
+boundary "DietaScreen" as Screen
+control "DietaUseCase" as DietaUC
+control "DietaRepository" as DietaRepo
+
+' Entidades do Domínio (do Modelo de Domínio)
+entity "AnamneseDieta" as Anamnese
+entity "PlanoDieta" as Plano
+entity "Refeicao" as Refeicao
+
+' ===== 1. Geração de Plano de Dieta =====
+Usuario -> Screen : Informar dados da anamnese
+activate Screen
+Screen -> Screen : Validar dados preenchidos
+Screen -> DietaUC : Solicitar geração de plano
+activate DietaUC
+
+DietaUC -> Anamnese : Criar a partir dos dados informados
+activate Anamnese
+Anamnese --> DietaUC : Anamnese criada
+deactivate Anamnese
+
+DietaUC -> Plano : Gerar plano a partir da anamnese
+activate Plano
+Plano -> Refeicao : Montar refeições do plano
+activate Refeicao
+Refeicao --> Plano : Refeições criadas
+deactivate Refeicao
+Plano --> DietaUC : Plano gerado
+deactivate Plano
+
+DietaUC -> DietaRepo : Persistir plano gerado
+activate DietaRepo
+DietaRepo --> DietaUC : Plano salvo
+deactivate DietaRepo
+
+DietaUC --> Screen : Retornar plano para exibição
+deactivate DietaUC
+Screen -> Usuario : Exibir plano (Aceitar / Recusar / Ajustar)
+deactivate Screen
+
+' ===== 2. Ajustes do Plano de Dieta =====
+Usuario -> Screen : Solicitar ajustes (comentários)
+activate Screen
+Screen -> DietaUC : Enviar solicitação de ajuste
+activate DietaUC
+
+DietaUC -> Plano : Aplicar ajustes solicitados
+activate Plano
+Plano -> Refeicao : Revisar refeições conforme ajustes
+activate Refeicao
+Refeicao --> Plano : Refeições ajustadas
+deactivate Refeicao
+Plano --> DietaUC : Plano ajustado
+deactivate Plano
+
+DietaUC -> DietaRepo : Atualizar plano ajustado
+activate DietaRepo
+DietaRepo --> DietaUC : Plano atualizado
+deactivate DietaRepo
+
+DietaUC --> Screen : Retornar plano ajustado
+deactivate DietaUC
+Screen -> Usuario : Exibir plano revisado
+deactivate Screen
+
+' ===== 3. Aceitar Plano =====
+Usuario -> Screen : Aceitar plano
+activate Screen
+Screen -> DietaUC : Confirmar aceitação
+activate DietaUC
+
+DietaUC -> Plano : Marcar como aceito
+activate Plano
+Plano --> DietaUC : Status atualizado
+deactivate Plano
+
+DietaUC -> DietaRepo : Persistir aceitação
+activate DietaRepo
+DietaRepo --> DietaUC : Confirmação
+deactivate DietaRepo
+
+DietaUC --> Screen : Notificar sucesso
+deactivate DietaUC
+Screen -> Usuario : Exibir confirmação
+deactivate Screen
+
+alt [Recusar Plano]
+    Usuario -> Screen : Recusar plano
+    activate Screen
+    Screen -> DietaUC : Registrar recusa
+    activate DietaUC
+    
+    DietaUC -> Plano : Marcar como recusado
+    activate Plano
+    Plano --> DietaUC : Status atualizado
+    deactivate Plano
+    
+    DietaUC -> DietaRepo : Descartar plano
+    activate DietaRepo
+    DietaRepo --> DietaUC : Confirmação
+    deactivate DietaRepo
+    
+    DietaUC --> Screen : Notificar descarte
+    deactivate DietaUC
+    Screen -> Usuario : Retornar à anamnese
+    deactivate Screen
+end
+
+@enduml

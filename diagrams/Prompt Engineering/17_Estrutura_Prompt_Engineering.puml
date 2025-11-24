@@ -1,0 +1,28 @@
+@startuml Estrutura_Prompt_Engineering
+title Estrutura de Prompt Engineering
+
+rectangle "PROMPT COMPLETO" {
+  rectangle "1. Definição de Papel\n(IA Especializada)" #LightBlue
+  rectangle "2. Regras de Formato\n(JSON exclusivo)" #LightGreen
+  rectangle "3. Esquema JSON\n(Estrutura obrigatória)" #LightYellow
+  rectangle "4. Regras Fundamentais\n(Regras de domínio)" #LightCoral
+  rectangle "5. Processo de Geração\n(Passo a passo)" #LightPink
+  rectangle "6. Anamnese\n(Dados do usuário)" #LightGrey
+}
+
+rectangle "PROMPT DE AJUSTE" {
+  rectangle "Template Base\n(Todos os componentes acima)" #LightSteelBlue
+  rectangle "+ Plano Atual (JSON)" 
+  rectangle "+ Alterações (Texto)"
+  rectangle "+ Regras de Ajuste"
+}
+
+note right
+  <b>Técnicas aplicadas:</b>
+  • Role Definition
+  • Constraints Explícitas
+  • Chain of Thought
+  • Output Formatting
+end note
+
+@enduml

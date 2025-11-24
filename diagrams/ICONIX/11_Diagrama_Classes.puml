@@ -1,0 +1,111 @@
+@startuml
+title Diagrama de Classes - TCC Fitness App (Versão Simplificada - ICONIX)
+
+' ====================================================================
+' ======================= ENTIDADES DO DOMÍNIO ========================
+' ====================================================================
+package "Domínio" {
+
+  class Usuario {
+    -nome: string
+    -email: string
+    -senhaHash: string
+  }
+
+  class AnamneseTreino
+  class AnamneseDieta
+
+  class ProgramaTreino {
+    -nome: string
+    -descricao: string
+  }
+
+  class Treino {
+    -nome: string
+    -duracao: int
+  }
+
+  class ExercicioTreino
+  class SessaoTreino
+  class Serie
+
+  class PlanoDieta {
+    -nome: string
+    -descricao: string
+  }
+
+  class Refeicao
+}
+
+' ===== Relacionamentos essenciais do domínio =====
+Usuario "1" --> "*" ProgramaTreino
+Usuario "1" --> "*" PlanoDieta
+Usuario "1" --> "*" SessaoTreino
+
+ProgramaTreino "1" --> "*" Treino
+Treino "1" --> "*" ExercicioTreino
+Treino "1" --> "*" SessaoTreino
+SessaoTreino "1" --> "*" Serie
+
+PlanoDieta "1" --> "*" Refeicao
+
+Usuario "1" --> "*" AnamneseTreino
+Usuario "1" --> "*" AnamneseDieta
+
+
+' ====================================================================
+' =========================== CONTROLES ===============================
+' ====================================================================
+package "Casos de Uso (Controles)" {
+
+  class AuthController {
+    +autenticar()
+    +registrar()
+  }
+
+  class TreinoController {
+    +gerarPlano()
+    +ajustarPlano()
+    +confirmarPlano()
+    +registrarExecucao()
+  }
+
+  class DietaController {
+    +gerarPlano()
+    +ajustarPlano()
+    +confirmarPlano()
+  }
+}
+
+' ===== Controles acessam apenas os blocos do domínio =====
+AuthController ..> Usuario
+TreinoController ..> ProgramaTreino
+TreinoController ..> Treino
+TreinoController ..> SessaoTreino
+DietaController ..> PlanoDieta
+
+
+' ====================================================================
+' ======================== FRONTEIRAS (UI) ===========================
+' ====================================================================
+package "Interfaces (Fronteiras)" {
+
+  class LoginUI
+  class AnamneseTreinoUI
+  class PlanoTreinoUI
+  class ExecucaoTreinoUI
+
+  class AnamneseDietaUI
+  class PlanoDietaUI
+}
+
+' ===== Interfaces chamam apenas os controles ==========
+LoginUI --> AuthController
+AnamneseTreinoUI --> TreinoController
+PlanoTreinoUI --> TreinoController
+ExecucaoTreinoUI --> TreinoController
+
+AnamneseDietaUI --> DietaController
+PlanoDietaUI --> DietaController
+
+@enduml

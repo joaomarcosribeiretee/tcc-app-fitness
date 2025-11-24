@@ -1,0 +1,56 @@
+@startuml
+title Diagrama de Robustez - Fluxo de Dietas (Gerar/Ajustar/Aceitar/Recusar)
+
+skinparam ParticipantPadding 5
+skinparam ArrowThickness 1
+
+actor Usuario
+boundary "Home / DietaScreen" as Screen
+boundary "ValidatedInput" as Input
+control "AuthViewModel" as VM
+control "DietaUseCase" as DietaUC
+control "HttpDietaRepository" as DietaRepo
+control "Backend API (FastAPI)" as Backend
+entity "Database (MySQL)" as DB
+control "GPT Service" as GPT
+
+Usuario --> Screen : Solicita geração de dieta
+Screen --> Input : Valida anamnese dieta
+Input --> VM : Submete dados
+
+' ===== Geração de Plano de Dieta (IA) =====
+VM --> DietaUC : Gerar plano
+DietaUC --> DietaRepo : POST /api/gpt/dieta
+DietaRepo --> Backend : Envia anamnese
+Backend --> GPT : Prompt Dieta
+GPT --> Backend : Plano JSON (refeições)
+Backend --> DB : Persistir plano (status: gerado)
+Backend --> DietaRepo : Plano
+DietaRepo --> DietaUC : Plano
+DietaUC --> Screen : Exibir (Aceitar | Recusar | Ajustar)
+
+' ===== Ajustes de Plano (IA) =====
+Usuario --> Screen : Ajustar
+Screen --> DietaUC : Texto de ajustes
+DietaUC --> DietaRepo : POST /api/gpt/dieta/ajustar
+DietaRepo --> Backend : Envia plano + ajustes
+Backend --> GPT : Prompt Ajuste
+GPT --> Backend : Plano revisado
+Backend --> DB : Atualiza plano
+Backend --> DietaRepo : Plano revisado
+DietaRepo --> DietaUC : Plano revisado
+DietaUC --> Screen : Exibir revisado
+
+' ===== Aceitar / Recusar =====
+Usuario --> Screen : Aceitar
+Screen --> DietaUC : Confirmar
+DietaUC --> DietaRepo : POST /api/gpt/dieta/confirm
+DietaRepo --> Backend : Confirma/associa usuário
+Backend --> DB : Plano aceito
+
+Usuario --> Screen : Recusar
+Screen --> DietaUC : Descartar
+DietaUC --> Backend : Atualiza/descarta (opcional)
+
+@enduml
+

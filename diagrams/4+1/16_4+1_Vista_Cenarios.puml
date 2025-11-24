@@ -1,0 +1,110 @@
+@startuml Vista_Cenarios_4_1
+title Vista de Cenários - Modelo 4+1 de Kruchten\nCenário: Geração e Aceitação de Plano de Treino
+
+actor Usuario
+participant "Mobile App" as Mobile
+participant "IntelligentWorkoutScreen" as Screen
+participant "workoutPlanService" as Service
+participant "Backend FastAPI" as Backend
+participant "GPT-4o Mini\n(Fine-Tuned)" as GPT
+participant "MySQL Database" as DB
+
+== 1. Geração de Plano de Treino ==
+
+Usuario -> Screen : Preenche anamnese
+activate Screen
+
+Screen -> Service : generateWorkoutPlanFromIA()
+activate Service
+
+Service -> Backend : POST /api/gpt\n(anamnese do usuário)
+activate Backend
+
+Backend -> Backend : Constrói prompt estruturado
+Backend -> GPT : Envia prompt para IA
+activate GPT
+
+GPT -> GPT : Processa com modelo fine-tuned
+GPT --> Backend : Retorna JSON estruturado
+deactivate GPT
+
+Backend -> Backend : Valida estrutura JSON\n**NÃO persiste no banco**
+Backend --> Service : Retorna plano (proposta)
+deactivate Backend
+
+Service --> Screen : Plano gerado
+deactivate Service
+Screen -> Mobile : Navega para WorkoutPlanScreen
+deactivate Screen
+
+Mobile -> Usuario : Exibe plano\n(Aceitar / Recusar / Ajustar)
+
+== 2. Aceitação do Plano ==
+
+Usuario -> Mobile : Aceita o plano
+activate Mobile
+
+Mobile -> Service : confirmWorkoutPlan(rawPlan)
+activate Service
+
+Service -> Backend : POST /api/gpt/confirm\n(plano completo)
+activate Backend
+
+Backend -> DB : **PERSISTE NO BANCO**\n- ProgramaTreino\n- Treinos\n- ExerciciosTreino
+activate DB
+DB --> Backend : Confirmação
+deactivate DB
+
+Backend --> Service : IDs do programa e treinos
+deactivate Backend
+
+Service --> Mobile : Plano salvo
+deactivate Service
+
+Mobile -> Usuario : Plano disponível\npara execução
+deactivate Mobile
+
+== 3. Ajuste do Plano (Opcional) ==
+
+Usuario -> Mobile : Solicita ajustes textuais
+activate Mobile
+
+Mobile -> Service : requestWorkoutPlanAdjustments()
+activate Service
+
+Service -> Backend : POST /api/gpt/ajustar\n(anamnese + plano + ajustes)
+activate Backend
+
+Backend -> GPT : Envia prompt de ajuste
+activate GPT
+GPT -> GPT : Gera plano revisado
+GPT --> Backend : Novo plano
+deactivate GPT
+
+Backend -> Backend : Valida novo plano\n**NÃO persiste**
+Backend --> Service : Plano ajustado
+deactivate Backend
+
+Service --> Mobile : Novo plano para avaliação
+deactivate Service
+
+Mobile -> Usuario : Exibe plano revisado\n(volta para etapa 2)
+deactivate Mobile
+
+legend right
+  <b>Integração das 4 Vistas:</b>
+  
+  <b>Vista Lógica:</b>
+  Components e Services
+  
+  <b>Vista de Processo:</b>
+  Threads e Execução
+  
+  <b>Vista Física:</b>
+  Mobile, Backend, DB
+  
+  <b>Vista de Desenvolvimento:</b>
+  Organização em módulos
+endlegend
+
+@enduml

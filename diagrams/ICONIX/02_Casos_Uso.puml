@@ -1,0 +1,43 @@
+@startuml Casos de Uso - TCC Fitness App
+
+title Diagrama de Casos de Uso - TCC Fitness App
+
+left to right direction
+
+actor "Usuário" as User
+
+package "Autenticação" {
+  usecase "Realizar Login" as UC01
+  usecase "Cadastrar Usuário" as UC02
+}
+
+package "Treinos" {
+  usecase "Gerar Plano de Treino\nInteligente (IA)" as UC03
+  usecase "Gerenciar Plano de Treino\n(Aceitar/Recusar/Ajustar)" as UC04
+  usecase "Executar Treino e\nRegistrar Dados" as UC07
+}
+
+package "Dieta" {
+  usecase "Gerar Plano de Dieta\nInteligente (IA)" as UC05
+  usecase "Gerenciar Plano de Dieta\n(Aceitar/Recusar/Ajustar)" as UC06
+}
+
+' Relacionamentos principais
+User --> UC01
+User --> UC02
+User --> UC03
+User --> UC04
+User --> UC05
+User --> UC06
+User --> UC07
+
+' Dependências
+UC03 ..> UC04 : <<extend>>
+UC05 ..> UC06 : <<extend>>
+UC04 ..> UC07 : <<include>>
+UC01 ..> UC03 : <<include>>
+UC01 ..> UC05 : <<include>>
+UC01 ..> UC07 : <<include>>
+
+@enduml
+

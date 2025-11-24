@@ -1,0 +1,53 @@
+@startuml
+title Diagrama de Sequência - Fluxo de Autenticação (Login)
+
+' Instâncias do Diagrama de Robustez
+actor Usuario
+boundary "LoginScreen" as Screen
+control "AuthViewModel" as VM
+control "LoginUseCase" as UC
+control "AuthRepository" as Repo
+
+' Entidades do Domínio
+entity "Usuario" as UsuarioEnt
+
+Usuario -> Screen : Informar credenciais de acesso
+activate Screen
+Screen -> Screen : Validar dados preenchidos
+Screen -> VM : Solicitar autenticação
+activate VM
+
+VM -> UC : Iniciar processo de login
+activate UC
+
+UC -> UsuarioEnt : Verificar credenciais
+activate UsuarioEnt
+UsuarioEnt --> UC : Credenciais válidas ou inválidas
+deactivate UsuarioEnt
+
+alt [Credenciais válidas]
+    UC -> Repo : Buscar dados do usuário autenticado
+    activate Repo
+    Repo --> UC : Dados do usuário
+    deactivate Repo
+    
+    UC -> UsuarioEnt : Obter informações do usuário
+    activate UsuarioEnt
+    UsuarioEnt --> UC : Dados do usuário
+    deactivate UsuarioEnt
+    
+    UC --> VM : Autenticação bem-sucedida
+    VM -> VM : Atualizar estado de autenticação
+    VM --> Screen : Redirecionar para Home
+    Screen -> Usuario : Exibir Home
+else [Credenciais inválidas]
+    UC --> VM : Falha na autenticação
+    VM --> Screen : Informar erro
+    Screen -> Usuario : Exibir mensagem de erro
+end
+
+deactivate UC
+deactivate VM
+deactivate Screen
+
+@enduml

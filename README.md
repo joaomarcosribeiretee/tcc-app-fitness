@@ -2,7 +2,7 @@
 
 **Projeto de Trabalho de Conclusão de Curso**  
 **Curso:** Ciência da Computação - PUC-SP  
-**Desenvolvedores:** João Marcos Ribeirete, Jefferson da Silva, Gabriel Souza
+**Desenvolvedores:** João Marcos Ribeirete Garbelini, Gabriel Souza de Carvalho, Jefferson da Silva de Souza
 
 Sistema completo de gestão de treinos e planos nutricionais personalizados utilizando Inteligência Artificial (GPT-4o Mini fine-tuned) para geração de planos personalizados baseados em anamnese do usuário.
 
@@ -319,7 +319,7 @@ Abra um terminal na pasta `backend-tcc-fitness/`:
 
 ```bash
 cd backend-tcc-fitness
-uv run task start
+uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 O servidor será iniciado em: **http://127.0.0.1:8000**
@@ -387,11 +387,13 @@ npm run web
 
 ## 👥 Participantes
 
-**Desenvolvedor Principal:**
-- **João Marcos Ribeirete** - Desenvolvimento completo (Frontend, Backend, Integração IA)
+**Desenvolvedores**
+- **João Marcos Ribeirete Garbelini** - Desenvolvimento completo (Frontend, Backend, Integração IA)
+- **Gabriel Souza de Carvalho** - Desenvolvimento Backend
+- **Jefferson da Silva de Souza** - Desenvolvimento Backend
 
 **Orientador:**
-- [Nome do Orientador] - PUC-SP
+- [Carlos Eduardo] - PUC-SP
 
 📖 **Para mais detalhes, consulte:** [`CONTRIBUTORS.md`](CONTRIBUTORS.md)
 
@@ -437,10 +439,10 @@ Este projeto é desenvolvido como Trabalho de Conclusão de Curso (TCC) em Ciên
 
 ## 📞 Contato
 
-**João Marcos Ribeirete**  
-📧 Email: [seu-email@exemplo.com]  
+**João Marcos Ribeirete Garbelini**  
+📧 Email: [jmribeirete@hotmail.com]  
 🎓 Curso: Ciência da Computação - PUC-SP  
-📅 Ano: 2024
+📅 Ano: 2025
 
 ---
 
